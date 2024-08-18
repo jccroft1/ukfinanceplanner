@@ -1,0 +1,225 @@
+<!doctype html>
+<html class="no-js" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UK Finance Planner</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body>
+    <div class="grid-container" x-data="getData()"  x-init="loadData()">
+        <div class="grid-x grid-padding-x">
+            <div class="medium-12 cell">
+                <h1>UK Finance Planner!</h1>
+            </div>
+        </div>
+
+        <div class="grid-x grid-padding-x">
+            <div class="medium-6 cell">
+                <h3>Basic Details</h3>
+
+                <form >
+                    <section class="grid-x grid-padding-x">
+                        <label class="small-6 cell">Pre-Tax Salary (£)
+                            <input type="number" placeholder="Enter your salary" name="salary" value="30000"
+                                x-model.number="salary" required>
+                        </label>
+    
+                        <label class="small-6 cell">Salary Increase (%)
+                            <input type="number" placeholder="Enter the salary increase percentage"
+                                name="salary_increase" value="6" x-model.number="salary_increase" required>
+                        </label>                                
+                    </section>
+
+                    <section class="grid-x grid-padding-x">
+                        <label class="small-6 cell">Pension Contributions (%)
+                            <input type="number" placeholder="Enter your pension contribution percentage" name="pensionPercent"                                 
+                                x-model.number="pensionPercent" required>
+                        </label>
+
+                        <label class="small-6 cell" x-show="pensionPercent > 0">How much is in your pension? (£)
+                            <input type="number" placeholder="Enter your how much you have in your pension" name="pensionValue"                                 
+                                x-model.number="pensionValue" required>
+                        </label>
+                    </section>
+
+                    <section class="grid-x grid-padding-x">
+                        <label class="small-6 cell">Student Loan?
+                            <select x-model="studentLoanType">
+                                <option value="None">None</option>
+                                <option value="Plan2">Plan 2</option>
+                            </select>
+                        </label>  
+
+                        <label class="small-6 cell" x-show="studentLoanType!='None'">How much student loan debt? (£)
+                            <input type="number" placeholder="Enter your total student loan debt" name="studentLoanValue"                                 
+                                x-model.number="studentLoanValue" required>
+                        </label>
+                    </section>
+
+                    <section class="grid-x grid-padding-x">
+                        <label class="small-6 cell">Years
+                            <input type="number" placeholder="Enter the number of years to show" name="year"
+                                value="10" x-model.number="years" required>
+                        </label>
+                        <label class="small-6 cell">Age
+                            <input type="number" placeholder="Enter your age" name="age"
+                                x-model.number="age" required>
+                        </label>
+                    </section>
+                </form>
+            </div>
+
+            <div class="medium-6 cell">
+                <h3>Pots</h3>
+                <ul class="accordion" data-accordion data-allow-all-closed="true" name="pots">
+                    <template x-for="(pot, index) in getAllPots()" :key="index">
+                        <li class="accordion-item" data-accordion-item>
+                            <a href="#" class="accordion-title" x-text="pot.name"></a>
+
+                            <div class="accordion-content" data-tab-content>
+                                <label>Name
+                                    <input type="text" placeholder="Enter a name for the pot" name="name"
+                                        x-model="pot.name" :readonly="pot.readonly" required>
+                                </label>
+                                
+                                <div class="grid-x grid-padding-x">
+                                    <fieldset class="medium-6 cell">
+                                        <legend>Is it a tax?</legend>
+                                        <input id="taxCheckbox" type="checkbox" x-model="pot.isTax" :readonly="pot.readonly" :disabled="pot.readonly"><label for="tax">Yes</label>
+                                        <input id="taxCheckbox" type="checkbox" x-model="pot.postPension" :readonly="pot.readonly" :disabled="pot.readonly" x-show="pot.isTax"><label x-show="pot.isTax" for="tax">After Pension?</label>
+                                    </fieldset>
+
+                                    <fieldset class="medium-6 cell">
+                                        <legend>What type of pot is it?</legend>
+                                        <input type="radio" :name="'type'+index" x-model="pot.type" value="Cost" :readonly="pot.readonly" :disabled="pot.readonly"><label for="typeCost">Cost</label>
+                                        <input type="radio" :name="'type'+index" x-model="pot.type" value="Debt" :readonly="pot.readonly" :disabled="pot.readonly"><label for="typeDebt">Debt</label>
+                                        <input type="radio" :name="'type'+index" x-model="pot.type" value="Asset" :readonly="pot.readonly" :disabled="pot.readonly"><label for="typeAsset">Asset</label>
+                                    </fieldset>
+                                </div>
+                                
+                                <div class="grid-x grid-padding-x">                                    
+                                    <label class="small-7 cell" x-show="pot.type != 'Cost'">Initial Value
+                                        <input type="number" placeholder="Enter the initial value of the pot" name="value"
+                                        x-model.number="pot.value" :readonly="pot.readonly" required>
+                                    </label>
+
+                                    <label class="small-5 cell" x-show="pot.type != 'Cost'">Interest
+                                        <input type="number" placeholder="Enter the yearly interest" name="value"
+                                        x-model.number="pot.interest" :readonly="pot.readonly" required>
+                                    </label>
+                                </div>
+
+                                <hr></hr>
+
+                                <label x-show="!pot.isTax">How much do you contribute?
+                                    <div class="grid-x grid-padding-x" >
+                                        <div class="small-7 cell">
+                                            <input type="number" placeholder="Enter how much you contribution" name="value"
+                                        x-model.number="pot.contributionValue" :readonly="pot.readonly" required>
+                                        </div>
+
+                                        <div class="small-5 cell">
+                                            <select x-model="pot.contributionInterval" :readonly="pot.readonly">
+                                                <option value="Monthly">Monthly</option>
+                                                <option value="Yearly">Yearly</option>
+                                            </select>
+                                        </div>
+                                    </div>                                    
+                                </label>
+
+                                <label x-show="!pot.isTax && pot.type != 'Cost'">Any external contributions? 
+                                    <div class="grid-x grid-padding-x">
+                                        <div class="small-7 cell">
+                                            <input type="number" placeholder="Enter how much do you contribute?" name="value"
+                                        x-model.number="pot.contributionExternalValue" :readonly="pot.readonly" required>
+                                        </div>
+
+                                        <div class="small-5 cell">
+                                            <select x-model="pot.contributionExternalInterval" :readonly="pot.readonly">
+                                                <option value="Monthly">Monthly</option>
+                                                <option value="Yearly">Yearly</option>
+                                            </select>
+                                        </div>
+                                    </div>                                    
+                                </label>
+
+                                <div x-show="pot.isTax">                                        
+                                    <template x-for="(bracket, index) in pot.contributionBrackets" :key="index">
+                                        <div class="grid-x grid-padding-x" >
+                                            <div class="small-4 cell">
+                                                <legend>Threshold</legend>
+                                                <input type="number" placeholder="Enter tax interval threshold" name="value"
+                                                    x-model.number="bracket.threshold" :readonly="pot.readonly" required>
+                                            </div>
+                                            <div class="small-4 cell">
+                                                <legend>Percentage</legend>
+                                                <input type="number" placeholder="Enter percentage in this threshold" name="value"
+                                                    x-model.number="bracket.percentage" :readonly="pot.readonly" required>
+                                            </div>
+                                            <div class="small-4 cell align-self-bottom">
+                                                <a class="button" name="delete_interval" @click="deleteInterval(pot, index)" x-show="!pot.readonly">Delete</a>   
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <a class="button" name="add_interval" @click="addContributionInterval(pot)" x-show="!pot.readonly">Add Bracket</a>                                    
+                                </div>
+
+                                <div x-show="!pot.readonly">
+                                    <hr></hr>
+
+                                    <a class="button alert" name="delete_pot" @click="deletePot(pot)">Delete Pot</a>
+                                </div>
+                                
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+
+                <a class="button" name="add_pot" @click="addCustomPot()">Add Custom Pot</a>
+            </div>
+        </div>
+        <div class="grid-x grid-padding-x">
+            <div class="medium-12 cell table-scroll" id="results">
+                <table>
+                    <thead>
+                        <tr>
+                            <th x-text="age > 0 ? 'Age' : 'Year'">Year</th>
+                            <th>Salary</th>
+                            <th>Take Home Pay</th>
+                            <th x-show="pots.length > 0">Disposable Income</th>
+                            <template x-for="(pot, index) in getAllPots()" :key="index">
+                                <th x-show="!pot.hide" x-text="pot.type === 'Cost' ? '(' + pot.name + ')' : pot.name"></th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in project()" :key="row.year">
+                            <tr>
+                                <td x-text="age > 0 ? age + row.year : row.year"></td>
+                                <td x-text="printMoney(row.salary)"></td>
+                                <td x-text="printMoney(row.takeHome)"></td>
+                                <td x-show="pots.length > 0" x-text="printMoney(row.disposable)"></td>
+                                <template x-for="(pot, index) in row.pots" :key="index">
+                                    <td x-show="!pot.hide" x-text="pot.type == 'Cost' ? printMoney(pot.contribution) : printMoney(pot.value)"></td>
+                                </template>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/js/foundation.min.js" crossorigin="anonymous"></script>
+    <script src="index.js"></script>
+    <script>$(document).foundation();</script>
+</body>
+
+</html>
