@@ -26,49 +26,49 @@
                     <section class="grid-x grid-padding-x">
                         <label class="small-6 cell">Pre-Tax Salary (£)
                             <input type="number" placeholder="Enter your salary" name="salary" value="30000"
-                                x-model.number="salary" required>
+                                x-model.number="data.salary" required>
                         </label>
     
                         <label class="small-6 cell">Salary Increase (%)
                             <input type="number" placeholder="Enter the salary increase percentage"
-                                name="salary_increase" value="6" x-model.number="salary_increase" required>
+                                name="salary_increase" value="6" x-model.number="data.salary_increase" required>
                         </label>                                
                     </section>
 
                     <section class="grid-x grid-padding-x">
                         <label class="small-6 cell">Pension Contributions (%)
                             <input type="number" placeholder="Enter your pension contribution percentage" name="pensionPercent"                                 
-                                x-model.number="pensionPercent" required>
+                                x-model.number="data.pensionPercent" required>
                         </label>
 
-                        <label class="small-6 cell" x-show="pensionPercent > 0">How much is in your pension? (£)
+                        <label class="small-6 cell" x-show="data.pensionPercent > 0">Amount (£)
                             <input type="number" placeholder="Enter your how much you have in your pension" name="pensionValue"                                 
-                                x-model.number="pensionValue" required>
+                                x-model.number="data.pensionValue" required>
                         </label>
                     </section>
 
                     <section class="grid-x grid-padding-x">
                         <label class="small-6 cell">Student Loan?
-                            <select x-model="studentLoanType">
+                            <select x-model="data.studentLoanType">
                                 <option value="None">None</option>
                                 <option value="Plan2">Plan 2</option>
                             </select>
                         </label>  
 
-                        <label class="small-6 cell" x-show="studentLoanType!='None'">How much student loan debt? (£)
+                        <label class="small-6 cell" x-show="data.studentLoanType!='None'">Debt (£)
                             <input type="number" placeholder="Enter your total student loan debt" name="studentLoanValue"                                 
-                                x-model.number="studentLoanValue" required>
+                                x-model.number="data.studentLoanValue" required>
                         </label>
                     </section>
 
                     <section class="grid-x grid-padding-x">
                         <label class="small-6 cell">Years
                             <input type="number" placeholder="Enter the number of years to show" name="year"
-                                value="10" x-model.number="years" required>
+                                value="10" x-model.number="data.years" required>
                         </label>
                         <label class="small-6 cell">Age
                             <input type="number" placeholder="Enter your age" name="age"
-                                x-model.number="age" required>
+                                x-model.number="data.age" required>
                         </label>
                     </section>
                 </form>
@@ -189,10 +189,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th x-text="age > 0 ? 'Age' : 'Year'">Year</th>
+                            <th x-text="data.age > 0 ? 'Age' : 'Year'">Year</th>
                             <th>Salary</th>
                             <th>Take Home Pay</th>
-                            <th x-show="pots.length > 0">Disposable Income</th>
+                            <th x-show="data.pots.length > 0">Disposable Income</th>
                             <template x-for="(pot, index) in getAllPots()" :key="index">
                                 <th x-show="!pot.hide" x-text="pot.type === 'Cost' ? '(' + pot.name + ')' : pot.name"></th>
                             </template>
@@ -201,10 +201,10 @@
                     <tbody>
                         <template x-for="row in project()" :key="row.year">
                             <tr>
-                                <td x-text="age > 0 ? age + row.year : row.year"></td>
+                                <td x-text="data.age > 0 ? data.age + row.year : row.year"></td>
                                 <td x-text="printMoney(row.salary)"></td>
                                 <td x-text="printMoney(row.takeHome)"></td>
-                                <td x-show="pots.length > 0" x-text="printMoney(row.disposable)"></td>
+                                <td x-show="data.pots.length > 0" x-text="printMoney(row.disposable)"></td>
                                 <template x-for="(pot, index) in row.pots" :key="index">
                                     <td x-show="!pot.hide" x-text="pot.type == 'Cost' ? printMoney(pot.contribution) : printMoney(pot.value)"></td>
                                 </template>

@@ -1,30 +1,33 @@
 function getData() {
     return {
-        salary: 30000,
-        salary_increase: 5,
-        pensionPercent: 0, 
-        pensionValue: 0, 
-        years: 10,
-        age: 0, 
-        studentLoanType: "None", 
-        studentLoanValue: 0, 
-        pots: Array(), 
+        data: {
+            salary: 30000,
+            salary_increase: 5,
+            pensionPercent: 0, 
+            pensionValue: 0, 
+            years: 10,
+            age: 0, 
+            studentLoanType: "None", 
+            studentLoanValue: 0, 
+            pots: Array(), 
+        }, 
 
         loadData() {
-            const savedSalary = localStorage.getItem('salary');
-            if (savedSalary) {
-              this.salary = Number(savedSalary);
+            const savedData = localStorage.getItem('data');
+            if (savedData) {
+              this.data = JSON.parse(savedData);
             }
         },
         saveData() {
-            localStorage.setItem('salary', this.salary);
+            localStorage.setItem('data', JSON.stringify(this.data));
         }, 
         addCustomPot() {
-            this.pots.push({
+            this.data.pots.push({
                 name: "Savings", 
                 value: 1000, 
                 interest: 4, 
-                isTax: false,                 
+                isTax: false,
+                // TODO: Move contribution info inside object
                 contributionValue: 100, 
                 contributionInterval: "Monthly", 
                 contributionBrackets: Array(), 
@@ -39,7 +42,7 @@ function getData() {
             new Foundation.Accordion(newItem);
         }, 
         deletePot(pot) {
-            this.pots.splice(this.pots.indexOf(pot), 1);
+            this.data.pots.splice(this.data.pots.indexOf(pot), 1);
         }, 
         deleteInterval(pot, index) {
             pot.contributionBrackets.splice(index, 1); 
@@ -47,7 +50,7 @@ function getData() {
         fixedPots() {
             let pots = []; 
 
-            if (this.pensionPercent > 0) {
+            if (this.data.pensionPercent > 0) {
                 pots.push(
                     {
                         name: "Pension", 
@@ -55,10 +58,10 @@ function getData() {
                         contributionBrackets: [
                             {
                                 threshold: 0, 
-                                percentage: this.pensionPercent, 
+                                percentage: this.data.pensionPercent, 
                             }
                         ], 
-                        value: this.pensionValue, 
+                        value: this.data.pensionValue, 
                         interest: 4, 
                         type: "Asset", 
                         readonly: true, 
@@ -109,7 +112,7 @@ function getData() {
                 }
             )
 
-            switch (this.studentLoanType) {
+            switch (this.data.studentLoanType) {
                 case "Plan2":
                     pots.push(
                         {
@@ -121,7 +124,7 @@ function getData() {
                                     percentage: 9, 
                                 }
                             ], 
-                            value: this.studentLoanValue, 
+                            value: this.data.studentLoanValue, 
                             interest: 6, 
                             type: "Debt", 
                             readonly: true, 
@@ -132,7 +135,7 @@ function getData() {
             return pots; 
         }, 
         getAllPots() {
-            return [...this.fixedPots(), ...this.pots];;
+            return [...this.fixedPots(), ...this.data.pots];;
         }, 
         addContributionInterval(pot) {
             pot.contributionBrackets.push({
@@ -142,10 +145,10 @@ function getData() {
         }, 
         project() {
             let rows = []; 
-            let salary = this.salary; 
+            let salary = this.data.salary; 
             let pots = deepCopy(this.getAllPots()); 
 
-            for (let year = 0; year <= this.years; year++) {
+            for (let year = 0; year <= this.data.years; year++) {
                 // create table pots 
                 rows.push({
                     year: year, 
@@ -199,7 +202,7 @@ function getData() {
                         }
                     }
                 })
-                salary += salary * (this.salary_increase / 100);
+                salary += salary * (this.data.salary_increase / 100);
 
                 this.saveData(); 
             }
@@ -220,7 +223,7 @@ function getData() {
                 pot.contributionBrackets.sort((a, b) => b.threshold - a.threshold)
 
                 if (pot.postPension) {
-                    salary -= salary * (this.pensionPercent / 100)
+                    salary -= salary * (this.data.pensionPercent / 100)
                 }
                 
                 let total = 0; 
