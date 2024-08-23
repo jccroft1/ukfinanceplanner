@@ -24,7 +24,7 @@
 
                 <form>
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 cell">Salary (before tax) (£)
+                        <label class="small-6 cell">Base Salary (before tax) (£)
                             <input type="number" placeholder="Enter your salary" name="salary" value="30000"
                                 x-model.number="data.salary" required>
                         </label>
@@ -129,11 +129,11 @@
                                     <div class="grid-x grid-padding-x" >
                                         <div class="small-7 cell">
                                             <input type="number" placeholder="Enter how much you contribution" name="value"
-                                        x-model.number="pot.contributionValue" :readonly="pot.readonly" required>
+                                        x-model.number="pot.personalContribution.value" :readonly="pot.readonly" required>
                                         </div>
 
                                         <div class="small-5 cell">
-                                            <select x-model="pot.contributionInterval" :readonly="pot.readonly">
+                                            <select x-model="pot.personalContribution.interval" :readonly="pot.readonly">
                                                 <option value="Monthly">Monthly</option>
                                                 <option value="Yearly">Yearly</option>
                                             </select>
@@ -145,11 +145,11 @@
                                     <div class="grid-x grid-padding-x">
                                         <div class="small-7 cell">
                                             <input type="number" placeholder="Enter how much do you contribute?" name="value"
-                                        x-model.number="pot.contributionExternalValue" :readonly="pot.readonly" required>
+                                        x-model.number="pot.externalContribution.value" :readonly="pot.readonly" required>
                                         </div>
 
                                         <div class="small-5 cell">
-                                            <select x-model="pot.contributionExternalInterval" :readonly="pot.readonly">
+                                            <select x-model="pot.externalContribution.interval" :readonly="pot.readonly">
                                                 <option value="Monthly">Monthly</option>
                                                 <option value="Yearly">Yearly</option>
                                             </select>
@@ -157,8 +157,11 @@
                                     </div>                                    
                                 </label>
 
-                                <div x-show="pot.isTax">                                        
-                                    <template x-for="(bracket, index) in pot.contributionBrackets" :key="index">
+                                <div x-show="pot.isTax">          
+                                    <section class="grid-x grid-padding-x">                        
+                                        <h6 class="small-6 cell">Personal Contributions</h6>
+                                    </section>                              
+                                    <template x-for="(bracket, index) in pot.personalContribution.brackets" :key="index">
                                         <div class="grid-x grid-padding-x" >
                                             <div class="small-4 cell">
                                                 <legend>Threshold</legend>
@@ -171,7 +174,33 @@
                                                     x-model.number="bracket.percentage" :readonly="pot.readonly" required>
                                             </div>
                                             <div class="small-4 cell align-self-bottom">
-                                                <a class="button" name="delete_interval" @click="deleteInterval(pot, index)" x-show="!pot.readonly">Delete</a>   
+                                                <a class="button" name="delete_interval" @click="deletePersonalInterval(pot, index)" x-show="!pot.readonly">Delete</a>   
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <a class="button" name="add_interval" @click="addContributionInterval(pot)" x-show="!pot.readonly">Add Bracket</a>                                    
+                                </div>
+
+                                <div x-show="pot.isTax">     
+                                    <hr></hr>              
+                                    <section class="grid-x grid-padding-x">                        
+                                        <h6 class="small-6 cell">External Contributions</h6>
+                                    </section>                                                   
+                                    <template x-for="(bracket, index) in pot.externalContribution.brackets" :key="index">
+                                        <div class="grid-x grid-padding-x" >
+                                            <div class="small-4 cell">
+                                                <legend>Threshold</legend>
+                                                <input type="number" placeholder="Enter tax interval threshold" name="value"
+                                                    x-model.number="bracket.threshold" :readonly="pot.readonly" required>
+                                            </div>
+                                            <div class="small-4 cell">
+                                                <legend>Percentage</legend>
+                                                <input type="number" placeholder="Enter percentage in this threshold" name="value"
+                                                    x-model.number="bracket.percentage" :readonly="pot.readonly" required>
+                                            </div>
+                                            <div class="small-4 cell align-self-bottom">
+                                                <a class="button" name="delete_interval" @click="deleteExternalInterval(pot, index)" x-show="!pot.readonly">Delete</a>   
                                             </div>
                                         </div>
                                     </template>

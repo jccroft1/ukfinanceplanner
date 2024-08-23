@@ -12,7 +12,6 @@ function getData() {
             studentLoanValue: 0, 
             pots: Array(), 
         }, 
-
         loadData() {
             const savedData = localStorage.getItem('data');
             if (savedData) {
@@ -28,12 +27,16 @@ function getData() {
                 value: 1000, 
                 interest: 4, 
                 isTax: false,
-                // TODO: Move contribution info inside object
-                contributionValue: 100, 
-                contributionInterval: "Monthly", 
-                contributionBrackets: Array(), 
-                contributionExternalValue: 0, 
-                contributionExternalInterval: "Monthly",                 
+                personalContribution: {
+                    value: 100, 
+                    interval: "Monthly", 
+                    brackets: Array(), 
+                }, 
+                externalContribution: {
+                    value: 0, 
+                    interval: "Monthly",                 
+                    brackets: Array(), 
+                }, 
                 type: "Asset", 
                 readonly: false, 
                 hide: false, 
@@ -45,8 +48,11 @@ function getData() {
         deletePot(pot) {
             this.data.pots.splice(this.data.pots.indexOf(pot), 1);
         }, 
-        deleteInterval(pot, index) {
-            pot.contributionBrackets.splice(index, 1); 
+        deletePersonalInterval(pot, index) {
+            pot.personalContribution.brackets.splice(index, 1); 
+        }, 
+        deleteExternalInterval(pot, index) {
+            pot.externalContribution.brackets.splice(index, 1); 
         }, 
         fixedPots() {
             let pots = []; 
@@ -56,17 +62,26 @@ function getData() {
                     {
                         name: "Pension", 
                         isTax: true, 
-                        contributionBrackets: [
-                            {
-                                threshold: 0, 
-                                percentage: this.data.pensionPercent, 
-                            }
-                        ], 
+                        personalContribution: {
+                            brackets: [
+                                {
+                                    threshold: 0, 
+                                    percentage: this.data.pensionPercent, 
+                                }
+                            ]
+                        }, 
+                        externalContribution: {
+                            brackets: [
+                                {
+                                    threshold: 0, 
+                                    percentage: this.data.pensionEmployer, 
+                                }
+                            ]
+                        }, 
                         value: this.data.pensionValue, 
                         interest: 7, 
                         type: "Asset", 
                         readonly: true, 
-                        // TODO: employer pension
                     }
                 )
             }
@@ -76,20 +91,27 @@ function getData() {
                     name: "Income Tax", 
                     isTax: true, 
                     postPension: true, 
-                    contributionBrackets: [
-                        {
-                            threshold: 12570, 
-                            percentage: 20, 
-                        }, 
-                        {
-                            threshold: 50270, 
-                            percentage: 40, 
-                        }, 
-                        {
-                            threshold: 125140, 
-                            percentage: 45, 
-                        }
-                    ], 
+                    personalContribution: {
+                        brackets: [
+                            {
+                                threshold: 12570, 
+                                percentage: 20, 
+                            }, 
+                            {
+                                threshold: 50270, 
+                                percentage: 40, 
+                            }, 
+                            {
+                                threshold: 125140, 
+                                percentage: 45, 
+                            }
+                        ]
+                    }, 
+                    externalContribution: {
+                        value: 0, 
+                        interval: "Monthly",                 
+                        brackets: Array(), 
+                    }, 
                     type: "Cost", 
                     readonly: true, 
                     hide: true, 
@@ -97,16 +119,23 @@ function getData() {
                 {
                     name: "National Insurance", 
                     isTax: true, 
-                    contributionBrackets: [
-                        {
-                            threshold: 12570, 
-                            percentage: 8, 
-                        }, 
-                        {
-                            threshold: 50270, 
-                            percentage: 2, 
-                        }
-                    ], 
+                    personalContribution: {
+                        brackets:[
+                            {
+                                threshold: 12570, 
+                                percentage: 8, 
+                            }, 
+                            {
+                                threshold: 50270, 
+                                percentage: 2, 
+                            }
+                        ]
+                    }, 
+                    externalContribution: {
+                        value: 0, 
+                        interval: "Monthly",                 
+                        brackets: Array(), 
+                    }, 
                     type: "Cost", 
                     readonly: true, 
                     hide: true, 
@@ -119,12 +148,19 @@ function getData() {
                         {
                             name: "Student Loan", 
                             isTax: true, 
-                            contributionBrackets: [
-                                {
-                                    threshold: 27295, 
-                                    percentage: 9, 
-                                }
-                            ], 
+                            personalContribution: {
+                                brackets: [
+                                    {
+                                        threshold: 27295, 
+                                        percentage: 9, 
+                                    }
+                                ]
+                            }, 
+                            externalContribution: {
+                                value: 0, 
+                                interval: "Monthly",                 
+                                brackets: Array(), 
+                            }, 
                             value: this.data.studentLoanValue, 
                             interest: 6, 
                             type: "Debt", 
@@ -138,8 +174,8 @@ function getData() {
         getAllPots() {
             return [...this.fixedPots(), ...this.data.pots];;
         }, 
-        addContributionInterval(pot) {
-            pot.contributionBrackets.push({
+        addPersonalContributionInterval(pot) {
+            pot.personalContribution.brackets.push({
                 threshold: 10000, 
                 percentage: 20, 
             });
@@ -155,11 +191,11 @@ function getData() {
 
                 // create table pots 
                 let potData = pots.map(pot => {
-                    let contribution = this.getContribution(salary, pot); 
+                    let contribution = this.getContribution(salary, pot, false); 
                     
-                    disposable -= this.getContribution(salary, pot); 
+                    disposable -= contribution; 
                     if (pot.isTax) {
-                        takeHome -= this.getContribution(salary, pot); 
+                        takeHome -= contribution; 
                     }
 
                     return {
@@ -190,28 +226,26 @@ function getData() {
                         break;  
                     }   
                     
-                    // compute contributions
-                    let contribution = this.getContribution(salary, pot); 
+                    // compute personal contributions
+                    let personalContribution = this.getContribution(salary, pot, false); 
                     switch (pot.type) {
                     case 'Debt':
-                        pot.value -= contribution; 
+                        pot.value -= personalContribution; 
                         break; 
                     case 'Asset':
-                        pot.value += contribution; 
+                        pot.value += personalContribution; 
                         break; 
                     }
 
                     // compute external contributions
-                    if (pot.contributionExternalValue > 0) {
-                        let contribution = this.getExternalContribution(salary, pot); 
-                        switch (pot.type) {
-                        case 'Debt':
-                            pot.value -= contribution; 
-                            break; 
-                        case 'Asset':
-                            pot.value += contribution; 
-                            break; 
-                        }
+                    let externalContribution = this.getContribution(salary, pot, true); 
+                    switch (pot.type) {
+                    case 'Debt':
+                        pot.value -= externalContribution; 
+                        break; 
+                    case 'Asset':
+                        pot.value += externalContribution; 
+                        break; 
                     }
                 })
                 salary += salary * (this.data.salaryPercent / 100);
@@ -229,9 +263,14 @@ function getData() {
             }
             return text.toLocaleString('en-GB', format)
         }, 
-        getContribution(salary, pot) {
+        getContribution(salary, pot, external) {
+            let contribution = pot.personalContribution; 
+            if (external) {
+                contribution = pot.externalContribution; 
+            }
+
             if (pot.isTax) {
-                pot.contributionBrackets.sort((a, b) => b.threshold - a.threshold)
+                contribution.brackets.sort((a, b) => b.threshold - a.threshold)
 
                 if (pot.postPension) {
                     salary -= salary * (this.data.pensionPercent / 100)
@@ -239,7 +278,7 @@ function getData() {
                 
                 let total = 0; 
 
-                pot.contributionBrackets.forEach(bracket => {
+                contribution.brackets.forEach(bracket => {
                     total += Math.max(salary - bracket.threshold, 0) * (bracket.percentage /100);
                     salary = Math.min(bracket.threshold, salary); 
                 })
@@ -253,7 +292,7 @@ function getData() {
             } 
 
             let multiplier = 1; 
-            switch (pot.contributionInterval) {
+            switch (contribution.interval) {
                 case "Monthly":
                     multiplier = 12;
                     break; 
@@ -261,28 +300,11 @@ function getData() {
 
             switch (pot.type) {
             case 'Debt':
-                return Math.min(pot.contributionValue * multiplier, pot.value); 
+                return Math.min(contribution.value * multiplier, pot.value); 
             default:
-                return pot.contributionValue * multiplier; 
+                return contribution.value * multiplier; 
             } 
         }, 
-        getExternalContribution(salary, pot) {
-            let personalContribution = this.getContribution(salary, pot); 
-
-            let multiplier = 1; 
-            switch (pot.contributionExternalInterval) {
-                case "Monthly":
-                    multiplier = 12;
-                    break; 
-            }
-
-            switch (pot.type) {
-            case 'Debt':
-                return Math.min(pot.contributionExternalValue * multiplier, pot.value - personalContribution); 
-            default:
-                return pot.contributionExternalValue * multiplier; 
-            } 
-        }
     }
 }
 
