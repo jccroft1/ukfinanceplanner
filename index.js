@@ -2,9 +2,10 @@ function getData() {
     return {
         data: {
             salary: 30000,
-            salary_increase: 5,
+            salaryPercent: 5,
             pensionPercent: 0, 
             pensionValue: 0, 
+            pensionEmployer: 0, 
             years: 10,
             age: 0, 
             studentLoanType: "None", 
@@ -62,7 +63,7 @@ function getData() {
                             }
                         ], 
                         value: this.data.pensionValue, 
-                        interest: 4, 
+                        interest: 7, 
                         type: "Asset", 
                         readonly: true, 
                         // TODO: employer pension
@@ -149,23 +150,33 @@ function getData() {
             let pots = deepCopy(this.getAllPots()); 
 
             for (let year = 0; year <= this.data.years; year++) {
+                let takeHome = salary; 
+                let disposable = salary; 
+
                 // create table pots 
+                let potData = pots.map(pot => {
+                    let contribution = this.getContribution(salary, pot); 
+                    
+                    disposable -= this.getContribution(salary, pot); 
+                    if (pot.isTax) {
+                        takeHome -= this.getContribution(salary, pot); 
+                    }
+
+                    return {
+                        name: pot.name, 
+                        type: pot.type, 
+                        contribution: contribution, 
+                        value: pot.value, 
+                        hide: pot.hide, 
+                    }
+                });
+
                 rows.push({
                     year: year, 
                     salary: salary, 
-                    takeHome: this.calculateTakehome(salary, pots), 
-                    disposable: this.calculateDisposable(salary, pots), 
-                    pots: pots.map(pot => {
-                        let contribution = this.getContribution(salary, pot); 
-
-                        return {
-                            name: pot.name, 
-                            type: pot.type, 
-                            contribution: contribution, 
-                            value: pot.value, 
-                            hide: pot.hide, 
-                        }
-                    }), 
+                    pots: potData, 
+                    takeHome: takeHome, 
+                    disposable: disposable
                 })
             
                 
@@ -190,6 +201,7 @@ function getData() {
                         break; 
                     }
 
+                    // compute external contributions
                     if (pot.contributionExternalValue > 0) {
                         let contribution = this.getExternalContribution(salary, pot); 
                         switch (pot.type) {
@@ -202,10 +214,9 @@ function getData() {
                         }
                     }
                 })
-                salary += salary * (this.data.salary_increase / 100);
-
-                this.saveData(); 
+                salary += salary * (this.data.salaryPercent / 100);
             }
+            this.saveData(); 
 
             return rows; 
         }, 
@@ -271,22 +282,6 @@ function getData() {
             default:
                 return pot.contributionExternalValue * multiplier; 
             } 
-        }, 
-        calculateTakehome(salary, pots) {
-            let takeHome = salary; 
-            pots.forEach(pot => {
-                if (pot.isTax) {
-                    takeHome -= this.getContribution(salary, pot); 
-                }
-            })
-            return takeHome
-        }, 
-        calculateDisposable(salary, pots) {
-            let takeHome = salary; 
-            pots.forEach(pot => {
-                takeHome -= this.getContribution(salary, pot); 
-            })
-            return takeHome
         }
     }
 }

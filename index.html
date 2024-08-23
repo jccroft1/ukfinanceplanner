@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UK Finance Planner</title>
+    <title>Finance Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css" crossorigin="anonymous">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -13,8 +13,8 @@
 <body>
     <div class="grid-container" x-data="getData()"  x-init="loadData()">
         <div class="grid-x grid-padding-x">
-            <div class="medium-12 cell">
-                <h1>UK Finance Planner!</h1>
+            <div class="medium-12 cell text-center">
+                <h1>Finance Planner!</h1>
             </div>
         </div>
 
@@ -22,33 +22,42 @@
             <div class="medium-6 cell">
                 <h3>Basic Details</h3>
 
-                <form >
+                <form>
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 cell">Pre-Tax Salary (£)
+                        <label class="small-6 cell">Salary (before tax) (£)
                             <input type="number" placeholder="Enter your salary" name="salary" value="30000"
                                 x-model.number="data.salary" required>
                         </label>
     
-                        <label class="small-6 cell">Salary Increase (%)
+                        <label class="small-6 cell">Increase (%)
                             <input type="number" placeholder="Enter the salary increase percentage"
-                                name="salary_increase" value="6" x-model.number="data.salary_increase" required>
+                                name="salaryPercent" value="6" x-model.number="data.salaryPercent" required>
                         </label>                                
                     </section>
 
+                    <section class="grid-x grid-padding-x">                        
+                        <h5 class="small-6 cell">Pension</h5>
+                    </section>
+
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 cell">Pension Contributions (%)
+                        <label class="small-6 medium-4 cell">Contributions (%)
                             <input type="number" placeholder="Enter your pension contribution percentage" name="pensionPercent"                                 
                                 x-model.number="data.pensionPercent" required>
                         </label>
 
-                        <label class="small-6 cell" x-show="data.pensionPercent > 0">Amount (£)
+                        <label class="small-6 medium-4 cell" x-show="data.pensionPercent > 0">Amount (£)
                             <input type="number" placeholder="Enter your how much you have in your pension" name="pensionValue"                                 
                                 x-model.number="data.pensionValue" required>
+                        </label>
+
+                        <label class="small-6 medium-4 cell" x-show="data.pensionPercent > 0">Employer match (%)
+                            <input type="number" placeholder="Enter your how much your emplyer matches up to" name="pensionEmployer"                                 
+                                x-model.number="data.pensionEmployer" required>
                         </label>
                     </section>
 
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 cell">Student Loan?
+                        <label class="small-6 cell">Student Loan
                             <select x-model="data.studentLoanType">
                                 <option value="None">None</option>
                                 <option value="Plan2">Plan 2</option>
@@ -189,10 +198,16 @@
                 <table>
                     <thead>
                         <tr>
-                            <th x-text="data.age > 0 ? 'Age' : 'Year'">Year</th>
+                            <th x-text="data.age > 0 ? 'Age' : 'Year'"></th>
                             <th>Salary</th>
-                            <th>Take Home Pay</th>
-                            <th x-show="data.pots.length > 0">Disposable Income</th>
+                            <th>
+                                Take Home Pay 
+                                <sup><span data-tooltip tabindex="1" title="This is your salary after taxes." data-trigger-class="">?</span></sup>
+                            </th>
+                            <th x-show="data.pots.length > 0">
+                                Disposable Income
+                                <sup><span data-tooltip tabindex="1" title="This is your salary after all outgoings." data-trigger-class="">?</span></sup>
+                            </th>
                             <template x-for="(pot, index) in getAllPots()" :key="index">
                                 <th x-show="!pot.hide" x-text="pot.type === 'Cost' ? '(' + pot.name + ')' : pot.name"></th>
                             </template>
