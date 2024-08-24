@@ -61,6 +61,18 @@ function getData() {
         deleteExternalInterval(pot, index) {
             pot.externalContribution.brackets.splice(index, 1); 
         }, 
+        addPersonalContributionInterval(pot) {
+            pot.personalContribution.brackets.push({
+                threshold: 10000, 
+                percentage: 20, 
+            });
+        },
+        addExternalContributionInterval(pot) {
+            pot.externalContribution.brackets.push({
+                threshold: 10000, 
+                percentage: 20, 
+            });
+        }, 
         fixedPots() {
             let pots = []; 
 
@@ -106,6 +118,7 @@ function getData() {
 
             pots.push(
                 {
+                    // TODO: Add Scotland option 
                     name: "Income Tax", 
                     isTax: true, 
                     postPension: true, 
@@ -120,6 +133,7 @@ function getData() {
                                 percentage: 40, 
                             }, 
                             {
+                                // TODO: Calculate the correct personal allowance 
                                 threshold: 125140, 
                                 percentage: 45, 
                             }
@@ -161,6 +175,7 @@ function getData() {
             )
 
             switch (this.data.studentLoanType) {
+                // TODO: Add other student loan plans 
                 case "Plan2":
                     pots.push(
                         {
@@ -191,13 +206,7 @@ function getData() {
         }, 
         getAllPots() {
             return [...this.fixedPots(), ...this.data.pots];;
-        }, 
-        addPersonalContributionInterval(pot) {
-            pot.personalContribution.brackets.push({
-                threshold: 10000, 
-                percentage: 20, 
-            });
-        }, 
+        },         
         project() {
             let rows = []; 
             let salary = this.totalSalary(); 
