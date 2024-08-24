@@ -12,9 +12,13 @@
 
 <body>
     <div class="grid-container" x-data="getData()"  x-init="loadData()">
-        <div class="grid-x grid-padding-x">
-            <div class="medium-12 cell text-center">
+        <div class="grid-x grid-padding-x align-right">
+            <!-- <div class="medium-2 cell"></div> -->
+            <div class="medium-8 cell text-center">
                 <h1>Finance Planner!</h1>
+            </div>
+            <div class="medium-2 cell align-self-middle text-right">
+                <a class="button alert" name="reset" @click="reset()">Reset</a>
             </div>
         </div>
 
@@ -221,7 +225,7 @@
                                             </template>
                                             <div class="grid-x grid-padding-x">
                                                 <div class="small-4 cell">
-                                                    <a class="button" name="add_interval" 
+                                                    <a class="button success " name="add_interval" 
                                                         @click="contribution.external ? addExternalContributionInterval(pot) : addPersonalContributionInterval(pot)" 
                                                         x-show="!pot.readonly">Add Bracket</a>     
                                                 </div>
@@ -241,7 +245,7 @@
                     </template>
                 </ul>
 
-                <a class="button" name="add_pot" @click="addCustomPot()">Add Custom Pot</a>
+                <a class="button success " name="add_pot" @click="addCustomPot()">Add Custom Pot</a>
             </div>
         </div>
         <div class="grid-x grid-padding-x">
@@ -281,6 +285,30 @@
             </div>
         </div>
     </div>
+
+    <hr></hr>
+
+    <footer class="footer grid-container">
+        <div class="grid-x grid-padding-x align-middle align-center">
+            <div class="cell small-12 medium-6 text-center medium-text-left">
+                <a href="https://github.com/jccroft1/ukfinanceplanner/" target="_blank">
+                    <i class="fi-social-github"></i> View on GitHub
+                </a>
+            </div>
+            <div class="cell small-12 medium-6 text-center medium-text-right align-self-bottom">
+                <p><button class="button secondary" data-open="disclaimerModal">Disclaimer</button></p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="reveal" id="disclaimerModal" data-reveal>
+        <h4>Disclaimer</h4>
+        <p>This is not financial advice. </p>
+        <button class="close-button" data-close aria-label="Close modal" type="button">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/js/foundation.min.js" crossorigin="anonymous"></script>

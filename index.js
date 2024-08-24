@@ -1,30 +1,35 @@
 function getData() {
     return {
-        data: {
-            baseSalary: 30000,
-            bonuses: 0, 
-            salaryPercent: 5,
-            pensionPercent: 0, 
-            pensionValue: 0, 
-            pensionEmployer: 0, 
-            pensionFromBase: false, 
-            years: 10,
-            age: 0, 
-            studentLoanType: "None", 
-            studentLoanValue: 0, 
-            pots: Array(),    
-        }, 
-        totalSalary() {
-            return this.data.baseSalary + this.data.bonuses; 
-        }, 
+        data: {},         
         loadData() {
             const savedData = localStorage.getItem('data');
             if (savedData) {
               this.data = JSON.parse(savedData);
+            } else {
+                this.reset();
             }
         },
         saveData() {
             localStorage.setItem('data', JSON.stringify(this.data));
+        }, 
+        reset() {
+            this.data = {
+                baseSalary: 30000,
+                bonuses: 0, 
+                salaryPercent: 5,
+                pensionPercent: 0, 
+                pensionValue: 0, 
+                pensionEmployer: 0, 
+                pensionFromBase: false, 
+                years: 10,
+                age: 0, 
+                studentLoanType: "None", 
+                studentLoanValue: 0, 
+                pots: Array(),    
+            }
+        }, 
+        totalSalary() {
+            return this.data.baseSalary + this.data.bonuses; 
         }, 
         addCustomPot() {
             this.data.pots.push({
