@@ -1,16 +1,21 @@
 function getData() {
     return {
         data: {
-            salary: 30000,
+            baseSalary: 30000,
+            bonuses: 0, 
             salaryPercent: 5,
             pensionPercent: 0, 
             pensionValue: 0, 
             pensionEmployer: 0, 
+            pensionFromBase: false, 
             years: 10,
             age: 0, 
             studentLoanType: "None", 
             studentLoanValue: 0, 
-            pots: Array(), 
+            pots: Array(),    
+        }, 
+        totalSalary() {
+            return this.data.baseSalary + this.data.bonuses; 
         }, 
         loadData() {
             const savedData = localStorage.getItem('data');
@@ -31,11 +36,13 @@ function getData() {
                     value: 100, 
                     interval: "Monthly", 
                     brackets: Array(), 
+                    fromBase: false, 
                 }, 
                 externalContribution: {
                     value: 0, 
                     interval: "Monthly",                 
                     brackets: Array(), 
+                    fromBase: false, 
                 }, 
                 type: "Asset", 
                 readonly: false, 
@@ -58,6 +65,15 @@ function getData() {
             let pots = []; 
 
             if (this.data.pensionPercent > 0) {
+                let taxRelief = 0; 
+                if (this.totalSalary() > 125140) {
+                    taxRelief = 0.45; 
+                } else if (this.totalSalary() > 50270) {
+                    taxRelief = 0.45; 
+                } else if (this.totalSalary() > 12570) {
+                    taxRelief = 0.2; 
+                }
+
                 pots.push(
                     {
                         name: "Pension", 
@@ -66,17 +82,19 @@ function getData() {
                             brackets: [
                                 {
                                     threshold: 0, 
-                                    percentage: this.data.pensionPercent, 
+                                    percentage: this.data.pensionPercent * (1 - taxRelief), 
                                 }
-                            ]
+                            ], 
+                            fromBase: this.data.pensionFromBase, 
                         }, 
                         externalContribution: {
                             brackets: [
                                 {
                                     threshold: 0, 
-                                    percentage: this.data.pensionEmployer, 
+                                    percentage: this.data.pensionEmployer * (1 + taxRelief), 
                                 }
-                            ]
+                            ], 
+                            fromBase: this.data.pensionFromBase, 
                         }, 
                         value: this.data.pensionValue, 
                         interest: 7, 
@@ -182,7 +200,8 @@ function getData() {
         }, 
         project() {
             let rows = []; 
-            let salary = this.data.salary; 
+            let salary = this.totalSalary(); 
+            let baseSalary = this.data.baseSalary; 
             let pots = deepCopy(this.getAllPots()); 
 
             for (let year = 0; year <= this.data.years; year++) {
@@ -191,7 +210,7 @@ function getData() {
 
                 // create table pots 
                 let potData = pots.map(pot => {
-                    let contribution = this.getContribution(salary, pot, false); 
+                    let contribution = this.getContribution(salary, baseSalary, pot, false); 
                     
                     disposable -= contribution; 
                     if (pot.isTax) {
@@ -227,7 +246,7 @@ function getData() {
                     }   
                     
                     // compute personal contributions
-                    let personalContribution = this.getContribution(salary, pot, false); 
+                    let personalContribution = this.getContribution(salary, baseSalary, pot, false); 
                     switch (pot.type) {
                     case 'Debt':
                         pot.value -= personalContribution; 
@@ -238,7 +257,7 @@ function getData() {
                     }
 
                     // compute external contributions
-                    let externalContribution = this.getContribution(salary, pot, true); 
+                    let externalContribution = this.getContribution(salary, baseSalary, pot, true); 
                     switch (pot.type) {
                     case 'Debt':
                         pot.value -= externalContribution; 
@@ -249,6 +268,7 @@ function getData() {
                     }
                 })
                 salary += salary * (this.data.salaryPercent / 100);
+                baseSalary += baseSalary * (this.data.salaryPercent / 100);
             }
             this.saveData(); 
 
@@ -263,13 +283,18 @@ function getData() {
             }
             return text.toLocaleString('en-GB', format)
         }, 
-        getContribution(salary, pot, external) {
+        getContribution(totalSalary, baseSalary, pot, external) {
             let contribution = pot.personalContribution; 
             if (external) {
                 contribution = pot.externalContribution; 
             }
 
             if (pot.isTax) {
+                let salary = totalSalary; 
+                if (contribution.fromBase) {
+                    salary = baseSalary;
+                }
+
                 contribution.brackets.sort((a, b) => b.threshold - a.threshold)
 
                 if (pot.postPension) {

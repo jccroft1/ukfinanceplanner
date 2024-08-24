@@ -24,12 +24,21 @@
 
                 <form>
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 cell">Base Salary (before tax) (£)
-                            <input type="number" placeholder="Enter your salary" name="salary" value="30000"
-                                x-model.number="data.salary" required>
+                        <label class="small-6 medium-4 cell">Base Salary (£)
+                            <sup><span data-tooltip tabindex="1" title="Without bonuses, overtime or things like car allowances." data-trigger-class="">?</span></sup>
+
+                            <input type="number" placeholder="Enter your salary" name="baseSalary" value="30000"
+                                x-model.number="data.baseSalary" required>
+                        </label>
+
+                        <label class="small-6 medium-4 cell">Additional (£)
+                            <sup><span data-tooltip tabindex="1" title="Total bonuses, overtime or things like car allowances.." data-trigger-class="">?</span></sup>
+
+                            <input type="number" placeholder="Enter your totalbonuses, overtime, etc. " name="bonuses" value="30000"
+                                x-model.number="data.bonuses" required>
                         </label>
     
-                        <label class="small-6 cell">Increase (%)
+                        <label class="small-6 medium-4 cell">Increase (%)
                             <input type="number" placeholder="Enter the salary increase percentage"
                                 name="salaryPercent" value="6" x-model.number="data.salaryPercent" required>
                         </label>                                
@@ -49,11 +58,13 @@
                             <input type="number" placeholder="Enter your how much you have in your pension" name="pensionValue"                                 
                                 x-model.number="data.pensionValue" required>
                         </label>
-
                         <label class="small-6 medium-4 cell" x-show="data.pensionPercent > 0">Employer match (%)
                             <input type="number" placeholder="Enter your how much your emplyer matches up to" name="pensionEmployer"                                 
                                 x-model.number="data.pensionEmployer" required>
                         </label>
+                        <fieldset class="small-6 medium-4 cell" x-show="data.pensionPercent > 0 && data.bonuses > 0">
+                            <input id="pensionBaseCheckbox" type="checkbox" x-model="data.pensionFromBase"><label for="pensionBaseCheckbox">From base salary?</label>
+                        </fieldset>
                     </section>
 
                     <section class="grid-x grid-padding-x">
@@ -99,8 +110,15 @@
                                 <div class="grid-x grid-padding-x">
                                     <fieldset class="medium-6 cell">
                                         <legend>Is it a tax?</legend>
-                                        <input id="taxCheckbox" type="checkbox" x-model="pot.isTax" :readonly="pot.readonly" :disabled="pot.readonly"><label for="tax">Yes</label>
-                                        <input id="taxCheckbox" type="checkbox" x-model="pot.postPension" :readonly="pot.readonly" :disabled="pot.readonly" x-show="pot.isTax"><label x-show="pot.isTax" for="tax">After Pension?</label>
+                                        <!-- TODO: Fix UI here -->
+                                        <input id="taxCheckbox" type="checkbox" x-model="pot.isTax" :readonly="pot.readonly" :disabled="pot.readonly">
+                                            <label for="tax">Yes</label>
+
+                                        <input id="taxCheckbox" type="checkbox" x-model="pot.postPension" :readonly="pot.readonly" :disabled="pot.readonly" x-show="pot.isTax">
+                                            <label x-show="pot.isTax" for="tax">After Pension?</label>
+
+                                        <input id="taxCheckbox" type="checkbox" x-model="pot.fromBase" :readonly="pot.readonly" :disabled="pot.readonly" x-show="pot.isTax">
+                                            <label x-show="pot.isTax" for="tax">From base salary?</label>
                                     </fieldset>
 
                                     <fieldset class="medium-6 cell">
@@ -182,7 +200,7 @@
                                     <a class="button" name="add_interval" @click="addContributionInterval(pot)" x-show="!pot.readonly">Add Bracket</a>                                    
                                 </div>
 
-                                <div x-show="pot.isTax">     
+                                <div x-show="pot.isTax && (!pot.readonly || pot.externalContribution.brackets.length > 0)">     
                                     <hr></hr>              
                                     <section class="grid-x grid-padding-x">                        
                                         <h6 class="small-6 cell">External Contributions</h6>
