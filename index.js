@@ -130,15 +130,16 @@ function getData() {
                     personalContribution: {
                         brackets: [
                             {
-                                threshold: 12570, 
+                                threshold: 0, 
                                 percentage: 20, 
+                                addPA: true, 
                             }, 
                             {
-                                threshold: 50270, 
+                                threshold: 37_700, 
                                 percentage: 40, 
+                                addPA: true, 
                             }, 
                             {
-                                // TODO: Calculate the correct personal allowance 
                                 threshold: 125140, 
                                 percentage: 45, 
                             }
@@ -179,32 +180,61 @@ function getData() {
                 }
             )
 
-            switch (this.data.studentLoanType) {
-                // TODO: Add other student loan plans 
-                case "Plan2":
-                    pots.push(
-                        {
-                            name: "Student Loan", 
-                            isTax: true, 
-                            personalContribution: {
-                                brackets: [
-                                    {
-                                        threshold: 27295, 
-                                        percentage: 9, 
-                                    }
-                                ]
-                            }, 
-                            externalContribution: {
-                                value: 0, 
-                                interval: "Monthly",                 
-                                brackets: Array(), 
-                            }, 
-                            value: this.data.studentLoanValue, 
-                            interest: 6, 
-                            type: "Debt", 
-                            readonly: true, 
-                        }
-                    )
+            if (this.data.studentLoanType != "None") {
+                let threshold = 0.0; 
+                switch (this.data.studentLoanType) {
+                    case "Plan1":
+                        threshold = 24_990;
+                        break; 
+                    case "Plan2":
+                        threshold = 27_295;
+                        break; 
+                    case "Plan4":
+                        threshold = 31_395;
+                        break; 
+                    case "Plan5":
+                        threshold = 25_000;
+                        break; 
+                    case "PostGrad":
+                        threshold = 21_000;
+                        break; 
+                }
+
+                let percentage = 9; 
+                if (this.data.studentLoanType == "PostGrad") {
+                    percentage = 6; 
+                }
+
+                let interest = 8; 
+                switch (this.data.studentLoanType) {
+                    case "Plan1":
+                    case "Plan4":
+                        interest = 6.25; 
+                }
+
+                pots.push(
+                    {
+                        name: "Student Loan", 
+                        isTax: true, 
+                        personalContribution: {
+                            brackets: [
+                                {
+                                    threshold: threshold, 
+                                    percentage: percentage, 
+                                }
+                            ]
+                        }, 
+                        externalContribution: {
+                            value: 0, 
+                            interval: "Monthly",                 
+                            brackets: Array(), 
+                        }, 
+                        value: this.data.studentLoanValue, 
+                        interest: interest, 
+                        type: "Debt", 
+                        readonly: true, 
+                    }
+                )
             }
 
             return pots; 
@@ -288,6 +318,17 @@ function getData() {
 
             return rows; 
         }, 
+        personalAllowance(salary) {
+            // TODO: Add blind people option 
+            if (salary < 100_000) {
+                return 12_570; 
+            }
+            if (salary > 125_140) {
+                return 0; 
+            }
+
+            return 12_570 - ((salary-100_000)/2)
+        }, 
         printMoney(text) {
             let format = { 
                 style: 'currency', 
@@ -318,8 +359,13 @@ function getData() {
                 let total = 0; 
 
                 contribution.brackets.forEach(bracket => {
-                    total += Math.max(salary - bracket.threshold, 0) * (bracket.percentage /100);
-                    salary = Math.min(bracket.threshold, salary); 
+                    let threshold = bracket.threshold; 
+                    if (bracket.addPA) {
+                        threshold += this.personalAllowance(salary); 
+                    }
+
+                    total += Math.max(salary - threshold, 0) * (bracket.percentage /100);
+                    salary = Math.min(threshold, salary); 
                 })
 
                 switch (pot.type) {

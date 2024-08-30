@@ -84,7 +84,11 @@
                         <label class="small-6 large-4 cell">Student Loan
                             <select x-model="data.studentLoanType">
                                 <option value="None">None</option>
+                                <option value="Plan1">Plan 1</option>
                                 <option value="Plan2">Plan 2</option>
+                                <option value="Plan4">Plan 4</option>
+                                <option value="Plan5">Plan 5</option>
+                                <option value="PostGrad">Post Graduate</option>
                             </select>
                         </label>  
 
@@ -204,17 +208,22 @@
                                         <div x-show="pot.isTax">
                                             <template x-for="(bracket, index) in contribution.data.brackets" :key="index">
                                                 <div class="grid-x grid-padding-x">
-                                                    <div class="small-4 cell">
+                                                    <div class="small-3 cell">
                                                         <legend>Threshold (£)</legend>
                                                         <input type="number" placeholder="Enter tax interval threshold" name="value"
                                                             x-model.number="bracket.threshold" :readonly="pot.readonly" required>
                                                     </div>
-                                                    <div class="small-4 cell">
+                                                    <div class="small-3 cell">
                                                         <legend>Percentage (%)</legend>
                                                         <input type="number" placeholder="Enter percentage in this threshold" name="value"
                                                             x-model.number="bracket.percentage" :readonly="pot.readonly" required>
                                                     </div>
-                                                    <div class="small-4 cell align-self-bottom">
+                                                    <div class="small-3 cell">
+                                                        <legend>Add PA</legend>
+                                                        <input id="taxCheckbox" type="checkbox" x-model="bracket.addPA" :readonly="pot.readonly" :disabled="pot.readonly" >
+                                                            <!-- <label for="tax">Yes</label> -->
+                                                    </div>
+                                                    <div class="small-3 cell align-self-bottom">
                                                         <a class="button alert" name="delete_interval" 
                                                             @click="contribution.external ? deleteExternalInterval(pot, index) : deletePersonalInterval(pot, index)" 
                                                             x-show="!pot.readonly">
