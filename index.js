@@ -1,19 +1,39 @@
 function getData() {
     return {
-        data: {},         
+        data: {},   
+        compareMode: false,  
         loadData() {
-            const savedData = localStorage.getItem('data');
+            let savedData = localStorage.getItem('data');
             if (savedData) {
               this.data = JSON.parse(savedData);
             } else {
                 this.reset();
             }
+
+            savedData = localStorage.getItem('originalData');
+            if (savedData != "undefined") {
+              this.originalData = JSON.parse(savedData);
+            }
+
+            savedData = localStorage.getItem('originalProjection');
+            if (savedData != "undefined") {
+              this.originalProjection = JSON.parse(savedData);
+            }
+
+            savedData = localStorage.getItem('compareMode');
+            if (savedData != "undefined") {
+              this.compareMode = JSON.parse(savedData);
+            }
         },
         saveData() {
             localStorage.setItem('data', JSON.stringify(this.data));
+            localStorage.setItem('originalData', JSON.stringify(this.originalData));
+            localStorage.setItem('originalProjection', JSON.stringify(this.originalProjection));
+            localStorage.setItem('compareMode', JSON.stringify(this.compareMode));
         }, 
         reset() {
             this.data = {
+                compareMode: false, 
                 baseSalary: 30000,
                 bonuses: 0, 
                 salaryPercent: 5,
@@ -27,6 +47,16 @@ function getData() {
                 studentLoanValue: 0, 
                 pots: Array(),    
             }
+            this.compareMode = false;
+        }, 
+        enterCompare() {
+            this.originalData = deepCopy(this.data); 
+            this.originalProjection = deepCopy(this.project()); 
+            this.compareMode = true;
+        }, 
+        exitCompare() {
+            this.data = deepCopy(this.originalData); 
+            this.compareMode = false;
         }, 
         totalSalary() {
             return this.data.baseSalary + this.data.bonuses; 
@@ -246,6 +276,11 @@ function getData() {
             let rows = []; 
             let salary = this.totalSalary(); 
             let baseSalary = this.data.baseSalary; 
+            let total = {
+                salary: 0, 
+                takeHome: 0, 
+                disposable: 0, 
+            }
             let pots = deepCopy(this.getAllPots()); 
 
             for (let year = 0; year <= this.data.years; year++) {
@@ -260,23 +295,44 @@ function getData() {
                     if (pot.isTax) {
                         takeHome -= contribution; 
                     }
-
-                    return {
+                    
+                    let newPot = {
                         name: pot.name, 
                         type: pot.type, 
                         contribution: contribution, 
                         value: pot.value, 
                         hide: pot.hide, 
+                        change: 0, 
                     }
+                    if (this.compareMode && newPot.type != 'Cost') {
+                        newPot.change = newPot.value - this.originalProjection[year].pots.find(p => p.name == newPot.name).value;
+                    }
+
+                    return newPot
                 });
 
-                rows.push({
-                    year: year, 
+                total.salary += salary; 
+                total.disposable += disposable;
+                total.takeHome += takeHome;
+                let newRow = {
+                    year: this.data.age > 0 ? this.data.age + year : year, 
                     salary: salary, 
                     pots: potData, 
                     takeHome: takeHome, 
-                    disposable: disposable
-                })
+                    disposable: disposable, 
+                    change: {
+                        salary: 0, 
+                        takeHome: 0, 
+                        disposable: 0, 
+                    }
+                }; 
+
+                if (this.compareMode) {
+                    newRow.change.salary = newRow.salary - this.originalProjection[year].salary;
+                    newRow.change.takeHome = newRow.takeHome - this.originalProjection[year].takeHome;
+                    newRow.change.disposable = newRow.disposable - this.originalProjection[year].disposable;
+                }
+                rows.push(newRow)
             
                 
                 // calculate the next values 
@@ -314,6 +370,26 @@ function getData() {
                 salary += salary * (this.data.salaryPercent / 100);
                 baseSalary += baseSalary * (this.data.salaryPercent / 100);
             }
+
+            let totalRow = {
+                year: "Total", 
+                salary: total.salary, 
+                takeHome: total.takeHome, 
+                disposable: total.disposable, 
+                change: {
+                    salary: 0, 
+                    takeHome: 0, 
+                    disposable: 0, 
+                }
+            }
+            if (this.compareMode) {
+                totalRow.change.salary = totalRow.salary - this.originalProjection[this.data.years+1].salary;
+                totalRow.change.takeHome = totalRow.takeHome - this.originalProjection[this.data.years+1].takeHome;
+                totalRow.change.disposable = totalRow.disposable - this.originalProjection[this.data.years+1].disposable;
+            }
+
+            rows.push(totalRow); 
+
             this.saveData(); 
 
             return rows; 
@@ -337,6 +413,22 @@ function getData() {
                 maximumFractionDigits: 0
             }
             return text.toLocaleString('en-GB', format)
+        }, 
+        printChange(num) {
+            let multiple = ''; 
+            let amount = ''; 
+            const absNum = Math.abs(num); 
+            if (absNum >= 1_000_000) {
+                multiple = 'm';
+                amount = this.printMoney(num/1_000_000); 
+            }  else if (absNum >= 1_000) {
+                multiple = 'k';
+                amount = this.printMoney(num/1_000); 
+            } else {
+                amount = this.printMoney(num); 
+            }
+
+            return (num > 0 ? '+' : '') +  amount + multiple; 
         }, 
         getContribution(totalSalary, baseSalary, pot, external) {
             let contribution = pot.personalContribution; 

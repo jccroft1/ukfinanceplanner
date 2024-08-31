@@ -5,8 +5,10 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <title>Finance Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="index.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -18,6 +20,10 @@
                 <h1>Finance Planner!</h1>
             </div>
             <div class="medium-2 cell align-self-middle text-right">
+                <a class="button secondary" name="compare" @click="enterCompare()" x-show="!compareMode">Compare Mode</a>
+                <a class="button alert" name="compare" @click="exitCompare()" x-show="compareMode">Exit Compare</a>
+            </div>
+            <div class="medium-1 cell align-self-middle text-right">
                 <a class="button alert" name="reset" @click="reset()">Reset</a>
             </div>
         </div>
@@ -99,9 +105,9 @@
                     </section>
 
                     <section class="grid-x grid-padding-x">
-                        <label class="small-6 large-4 cell">Years
+                        <label class="small-6 large-4 cell" x-transition>Years
                             <input type="number" placeholder="Enter the number of years to show" name="year"
-                                value="10" x-model.number="data.years" required>
+                                value="10" x-model.number="data.years" :readonly="compareMode" required>
                         </label>
                         <label class="small-6 large-4 cell">Age
                             <input type="number" placeholder="Enter your age" name="age"
@@ -116,13 +122,31 @@
                 <ul class="accordion" data-accordion data-allow-all-closed="true" name="pots">
                     <template x-for="(pot, index) in getAllPots()" :key="index">
                         <li class="accordion-item" data-accordion-item>
-                            <a href="#" class="accordion-title" x-text="pot.name"></a>
+                            <a href="#" class="accordion-title">
+                                <span x-text="pot.name"></span>
+
+                                <span class="label secondary" x-show="pot.hide">Hidden</span>
+                            </a>
 
                             <div class="accordion-content" data-tab-content>
-                                <label>Name
-                                    <input type="text" placeholder="Enter a name for the pot" name="name"
-                                        x-model="pot.name" :readonly="pot.readonly" required>
-                                </label>
+                                <div class="grid-x grid-padding-x">
+                                    <label class="small-7 cell">Name
+                                        <input type="text" placeholder="Enter a name for the pot" name="name"
+                                            x-model="pot.name" :readonly="pot.readonly" required>
+                                    </label>
+
+
+                                    <fieldset class="small-5 cell">
+                                        <legend>Hide table column?</legend>
+                                         <div class="grid-x grid-padding-x">
+                                            <div class="medium-12 cell">
+                                                <input id="hide" type="checkbox" 
+                                                    x-model="pot.hide" :readonly="pot.readonly" :disabled="pot.readonly">
+                                                    <label for="tax">Yes</label>
+                                            </div>
+                                         </div>
+                                    </fieldset>
+                                </div>
                                 
                                 <div class="grid-x grid-padding-x">
                                     <fieldset class="medium-6 cell">
@@ -246,7 +270,7 @@
                                 <div x-show="!pot.readonly">
                                     <hr></hr>
 
-                                    <a class="button alert" name="delete_pot" @click="deletePot(pot)">Delete Pot</a>
+                                    <a class="button alert" name="delete_pot" x-show="!compareMode" @click="deletePot(pot)">Delete Pot</a>
                                 </div>
                                 
                             </div>
@@ -254,7 +278,7 @@
                     </template>
                 </ul>
 
-                <a class="button success " name="add_pot" @click="addCustomPot()">Add Custom Pot</a>
+                <a class="button success " name="add_pot" @click="addCustomPot()" x-show="!compareMode">Add Custom Pot</a>
             </div>
         </div>
         <div class="grid-x grid-padding-x">
@@ -280,12 +304,32 @@
                     <tbody>
                         <template x-for="row in project()" :key="row.year">
                             <tr>
-                                <td x-text="data.age > 0 ? data.age + row.year : row.year"></td>
-                                <td x-text="printMoney(row.salary)"></td>
-                                <td x-text="printMoney(row.takeHome)"></td>
-                                <td x-show="data.pots.length > 0" x-text="printMoney(row.disposable)" x-transition></td>
+                                <td x-text="row.year"></td>
+                                <td>
+                                    <span x-text="printMoney(row.salary)"></span>
+                                    <span x-show="compareMode && row.change.salary != 0" x-transition
+                                        x-text="printChange(row.change.salary)" 
+                                        :class="row.change.salary > 0 ? 'text-success' : 'text-alert'"></span>
+                                </td>
+                                <td>
+                                    <span x-text="printMoney(row.takeHome)"></span>
+                                    <span x-show="compareMode && row.change.takeHome != 0" x-transition
+                                        x-text="printChange(row.change.takeHome)" 
+                                        :class="row.change.takeHome > 0 ? 'text-success' : 'text-alert'"></span>
+                                </td>
+                                <td x-show="data.pots.length > 0" x-transition>
+                                    <span x-text="printMoney(row.disposable)"></span>
+                                    <span x-show="compareMode && row.change.disposable != 0" x-transition
+                                        x-text="printChange(row.change.disposable)" 
+                                        :class="row.change.disposable > 0 ? 'text-success' : 'text-alert'"></span>
+                                </td>
                                 <template x-for="(pot, index) in row.pots" :key="index">
-                                    <td x-show="!pot.hide" x-text="pot.type == 'Cost' ? printMoney(pot.contribution) : printMoney(pot.value)"></td>
+                                    <td x-show="!pot.hide">
+                                        <span x-text="pot.type == 'Cost' ? printMoney(pot.contribution) : printMoney(pot.value)"></span>
+                                        <span x-show="compareMode && pot.change != 0" x-transition
+                                            x-text="printChange(pot.change)" 
+                                            :class="pot.change > 0 ^ pot.type == 'Debt' ? 'text-success' : 'text-alert'"></span>
+                                    </td>
                                 </template>
                             </tr>
                         </template>
