@@ -15,7 +15,6 @@
 <body>
     <div class="grid-container" x-data="getData()"  x-init="loadData()">
         <div class="grid-x grid-padding-x align-right">
-            <!-- <div class="medium-2 cell"></div> -->
             <div class="medium-8 cell text-center">
                 <h1>Finance Planner!</h1>
             </div>
@@ -102,6 +101,8 @@
                             <input type="number" placeholder="Enter your total student loan debt" name="studentLoanValue"                                 
                                 x-model.number="data.studentLoanValue" required>
                         </label>
+
+                        <!-- TODO: Graduation date to do expiry. Maybe an opportunity to do events (i.e. moving money at specific years/conditions) -->
                     </section>
 
                     <section class="grid-x grid-padding-x">
@@ -174,17 +175,18 @@
                                     </fieldset>
 
                                     <fieldset class="medium-6 cell">
-                                        <legend>What type of pot is it?</legend>
+                                        <legend>
+                                            What type of pot is it?
+                                            <!-- <sup><span data-tooltip tabindex="1" title="E.g. savings accounts or investments" data-trigger-class="">?</span></sup> -->
+                                        </legend>
                                         <input type="radio" :name="'type'+index" x-model="pot.type" value="Cost" :readonly="pot.readonly" :disabled="pot.readonly">
                                             <label for="typeCost">
                                                 Cost
-                                                <!-- <sup><span data-tooltip tabindex="1" title="E.g. bills" data-trigger-class="">?</span></sup> -->
                                             </label>
 
                                         <input type="radio" :name="'type'+index" x-model="pot.type" value="Debt" :readonly="pot.readonly" :disabled="pot.readonly">
                                             <label for="typeDebt">
                                                 Debt
-                                                <!-- <sup><span data-tooltip tabindex="1" title="E.g. mortgage or loans" data-trigger-class="">?</span></sup> -->
                                             </label>
 
                                         <input type="radio" :name="'type'+index" x-model="pot.type" value="Asset" :readonly="pot.readonly" :disabled="pot.readonly">
@@ -249,7 +251,7 @@
                                                     </div>
                                                     <div class="small-3 cell align-self-bottom">
                                                         <a class="button alert" name="delete_interval" 
-                                                            @click="contribution.external ? deleteExternalInterval(pot, index) : deletePersonalInterval(pot, index)" 
+                                                            @click="contribution.external ? deleteInterval(pot.externalContribution.brackets, index) : deleteInterval(pot.personalContribution.brackets, index)" 
                                                             x-show="!pot.readonly">
                                                             Delete
                                                         </a>   
@@ -259,7 +261,7 @@
                                             <div class="grid-x grid-padding-x">
                                                 <div class="small-4 cell">
                                                     <a class="button success " name="add_interval" 
-                                                        @click="contribution.external ? addExternalContributionInterval(pot) : addPersonalContributionInterval(pot)" 
+                                                        @click="contribution.external ? addInterval(pot.externalContribution.brackets) : addInterval(pot.personalContribution.brackets)" 
                                                         x-show="!pot.readonly">Add Bracket</a>     
                                                 </div>
                                             </div>

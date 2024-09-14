@@ -3,6 +3,7 @@ function getData() {
         data: {},   
         compareMode: false,  
         loadData() {
+            // TODO: Move everything inside data, data becomes settings 
             let savedData = localStorage.getItem('data');
             if (savedData) {
               this.data = JSON.parse(savedData);
@@ -90,24 +91,15 @@ function getData() {
         deletePot(pot) {
             this.data.pots.splice(this.data.pots.indexOf(pot), 1);
         }, 
-        deletePersonalInterval(pot, index) {
-            pot.personalContribution.brackets.splice(index, 1); 
+        deleteInterval(brackets, index) {
+            brackets.splice(index, 1); 
         }, 
-        deleteExternalInterval(pot, index) {
-            pot.externalContribution.brackets.splice(index, 1); 
-        }, 
-        addPersonalContributionInterval(pot) {
-            pot.personalContribution.brackets.push({
+        addInterval(brackets) {
+            brackets.push({
                 threshold: 10000, 
                 percentage: 20, 
             });
         },
-        addExternalContributionInterval(pot) {
-            pot.externalContribution.brackets.push({
-                threshold: 10000, 
-                percentage: 20, 
-            });
-        }, 
         fixedPots() {
             let pots = []; 
 
@@ -328,9 +320,9 @@ function getData() {
                 }; 
 
                 if (this.compareMode) {
-                    newRow.change.salary = newRow.salary - this.originalProjection[year].salary;
-                    newRow.change.takeHome = newRow.takeHome - this.originalProjection[year].takeHome;
-                    newRow.change.disposable = newRow.disposable - this.originalProjection[year].disposable;
+                    ['salary', 'takeHome', 'disposable'].forEach(key => {
+                        newRow.change[key] = newRow[key] - this.originalProjection[year][key];
+                    })
                 }
                 rows.push(newRow)
             
@@ -383,9 +375,9 @@ function getData() {
                 }
             }
             if (this.compareMode) {
-                totalRow.change.salary = totalRow.salary - this.originalProjection[this.data.years+1].salary;
-                totalRow.change.takeHome = totalRow.takeHome - this.originalProjection[this.data.years+1].takeHome;
-                totalRow.change.disposable = totalRow.disposable - this.originalProjection[this.data.years+1].disposable;
+                ['salary', 'takeHome', 'disposable'].forEach(key => {
+                    totalRow.change[key] = totalRow[key] - this.originalProjection[this.data.years+1][key];
+                })
             }
 
             rows.push(totalRow); 
