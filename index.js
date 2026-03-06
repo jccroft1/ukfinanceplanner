@@ -1,29 +1,29 @@
 function getData() {
     return {
-        data: {},   
-        compareMode: false,  
+        data: {},
+        compareMode: false,
         loadData() {
             // TODO: Move everything inside data, data becomes settings 
             let savedData = localStorage.getItem('data');
             if (savedData) {
-              this.data = JSON.parse(savedData);
+                this.data = JSON.parse(savedData);
             } else {
                 this.reset();
             }
 
             savedData = localStorage.getItem('originalData');
             if (savedData != "undefined") {
-              this.originalData = JSON.parse(savedData);
+                this.originalData = JSON.parse(savedData);
             }
 
             savedData = localStorage.getItem('originalProjection');
             if (savedData != "undefined") {
-              this.originalProjection = JSON.parse(savedData);
+                this.originalProjection = JSON.parse(savedData);
             }
 
             savedData = localStorage.getItem('compareMode');
             if (savedData != "undefined") {
-              this.compareMode = JSON.parse(savedData);
+                this.compareMode = JSON.parse(savedData);
             }
         },
         saveData() {
@@ -31,114 +31,114 @@ function getData() {
             localStorage.setItem('originalData', JSON.stringify(this.originalData));
             localStorage.setItem('originalProjection', JSON.stringify(this.originalProjection));
             localStorage.setItem('compareMode', JSON.stringify(this.compareMode));
-        }, 
+        },
         reset() {
             this.data = {
-                compareMode: false, 
+                compareMode: false,
                 baseSalary: 30000,
-                bonuses: 0, 
+                bonuses: 0,
                 salaryPercent: 5,
-                pensionPercent: 0, 
-                pensionValue: 0, 
-                pensionEmployer: 0, 
-                pensionFromBase: false, 
+                pensionPercent: 0,
+                pensionValue: 0,
+                pensionEmployer: 0,
+                pensionFromBase: false,
                 years: 10,
-                age: 0, 
-                studentLoanType: "None", 
-                studentLoanValue: 0, 
-                pots: Array(),    
+                age: 0,
+                studentLoanType: "None",
+                studentLoanValue: 0,
+                pots: Array(),
             }
             this.compareMode = false;
-        }, 
+        },
         enterCompare() {
-            this.originalData = deepCopy(this.data); 
-            this.originalProjection = deepCopy(this.project()); 
+            this.originalData = deepCopy(this.data);
+            this.originalProjection = deepCopy(this.project());
             this.compareMode = true;
-        }, 
+        },
         exitCompare() {
-            this.data = deepCopy(this.originalData); 
+            this.data = deepCopy(this.originalData);
             this.compareMode = false;
-        }, 
+        },
         totalSalary() {
-            return this.data.baseSalary + this.data.bonuses; 
-        }, 
+            return this.data.baseSalary + this.data.bonuses;
+        },
         addCustomPot() {
             this.data.pots.push({
-                name: "Savings", 
-                value: 1000, 
-                interest: 4, 
+                name: "Savings",
+                value: 1000,
+                interest: 4,
                 isTax: false,
                 personalContribution: {
-                    value: 100, 
-                    interval: "Monthly", 
-                    brackets: Array(), 
-                    fromBase: false, 
-                }, 
+                    value: 100,
+                    interval: "Monthly",
+                    brackets: Array(),
+                    fromBase: false,
+                },
                 externalContribution: {
-                    value: 0, 
-                    interval: "Monthly",                 
-                    brackets: Array(), 
-                    fromBase: false, 
-                }, 
-                type: "Asset", 
-                readonly: false, 
-                hide: false, 
-            }); 
+                    value: 0,
+                    interval: "Monthly",
+                    brackets: Array(),
+                    fromBase: false,
+                },
+                type: "Asset",
+                readonly: false,
+                hide: false,
+            });
 
             const newItem = $('.accordion-item').last();
             new Foundation.Accordion(newItem);
-        }, 
+        },
         deletePot(pot) {
             this.data.pots.splice(this.data.pots.indexOf(pot), 1);
-        }, 
+        },
         deleteInterval(brackets, index) {
-            brackets.splice(index, 1); 
-        }, 
+            brackets.splice(index, 1);
+        },
         addInterval(brackets) {
             brackets.push({
-                threshold: 10000, 
-                percentage: 20, 
+                threshold: 10000,
+                percentage: 20,
             });
         },
         fixedPots() {
-            let pots = []; 
+            let pots = [];
 
             if (this.data.pensionPercent > 0) {
-                let taxRelief = 0; 
+                let taxRelief = 0;
                 if (this.totalSalary() > 125140) {
-                    taxRelief = 0.45; 
+                    taxRelief = 0.45;
                 } else if (this.totalSalary() > 50270) {
-                    taxRelief = 0.45; 
+                    taxRelief = 0.45;
                 } else if (this.totalSalary() > 12570) {
-                    taxRelief = 0.2; 
+                    taxRelief = 0.2;
                 }
 
                 pots.push(
                     {
-                        name: "Pension", 
-                        isTax: true, 
+                        name: "Pension",
+                        isTax: true,
                         personalContribution: {
                             brackets: [
                                 {
-                                    threshold: 0, 
-                                    percentage: this.data.pensionPercent * (1 - taxRelief), 
+                                    threshold: 0,
+                                    percentage: this.data.pensionPercent * (1 - taxRelief),
                                 }
-                            ], 
-                            fromBase: this.data.pensionFromBase, 
-                        }, 
+                            ],
+                            fromBase: this.data.pensionFromBase,
+                        },
                         externalContribution: {
                             brackets: [
                                 {
-                                    threshold: 0, 
-                                    percentage: this.data.pensionEmployer * (1 + taxRelief), 
+                                    threshold: 0,
+                                    percentage: this.data.pensionEmployer * (1 + taxRelief),
                                 }
-                            ], 
-                            fromBase: this.data.pensionFromBase, 
-                        }, 
-                        value: this.data.pensionValue, 
-                        interest: 7, 
-                        type: "Asset", 
-                        readonly: true, 
+                            ],
+                            fromBase: this.data.pensionFromBase,
+                        },
+                        value: this.data.pensionValue,
+                        interest: 7,
+                        type: "Asset",
+                        readonly: true,
                     }
                 )
             }
@@ -146,155 +146,167 @@ function getData() {
             pots.push(
                 {
                     // TODO: Add Scotland option 
-                    name: "Income Tax", 
-                    isTax: true, 
-                    postPension: true, 
+                    name: "Income Tax",
+                    isTax: true,
+                    postPension: true,
                     personalContribution: {
                         brackets: [
                             {
-                                threshold: 0, 
-                                percentage: 20, 
-                                addPA: true, 
-                            }, 
+                                threshold: 0,
+                                percentage: 20,
+                                addPA: true,
+                            },
                             {
-                                threshold: 37_700, 
-                                percentage: 40, 
-                                addPA: true, 
-                            }, 
+                                threshold: 37_700,
+                                percentage: 40,
+                                addPA: true,
+                            },
                             {
-                                threshold: 125140, 
-                                percentage: 45, 
+                                threshold: 125140,
+                                percentage: 45,
                             }
                         ]
-                    }, 
+                    },
                     externalContribution: {
-                        value: 0, 
-                        interval: "Monthly",                 
-                        brackets: Array(), 
-                    }, 
-                    type: "Cost", 
-                    readonly: true, 
-                    hide: true, 
-                }, 
+                        value: 0,
+                        interval: "Monthly",
+                        brackets: Array(),
+                    },
+                    type: "Cost",
+                    readonly: true,
+                    hide: true,
+                },
                 {
-                    name: "National Insurance", 
-                    isTax: true, 
+                    name: "National Insurance",
+                    isTax: true,
                     personalContribution: {
-                        brackets:[
+                        brackets: [
                             {
-                                threshold: 12570, 
-                                percentage: 8, 
-                            }, 
+                                threshold: 12570,
+                                percentage: 8,
+                            },
                             {
-                                threshold: 50270, 
-                                percentage: 2, 
+                                threshold: 50270,
+                                percentage: 2,
                             }
                         ]
-                    }, 
+                    },
                     externalContribution: {
-                        value: 0, 
-                        interval: "Monthly",                 
-                        brackets: Array(), 
-                    }, 
-                    type: "Cost", 
-                    readonly: true, 
-                    hide: true, 
+                        value: 0,
+                        interval: "Monthly",
+                        brackets: Array(),
+                    },
+                    type: "Cost",
+                    readonly: true,
+                    hide: true,
                 }
             )
 
+            let plan2Lower = 28_470;
+            let plan2Higher = 51_245;
             if (this.data.studentLoanType != "None") {
-                let threshold = 0.0; 
+                let threshold = 0.0;
                 switch (this.data.studentLoanType) {
                     case "Plan1":
-                        threshold = 24_990;
-                        break; 
+                        threshold = 26_065;
+                        break;
                     case "Plan2":
-                        threshold = 27_295;
-                        break; 
+                        threshold = plan2Lower;
+                        break;
                     case "Plan4":
-                        threshold = 31_395;
-                        break; 
+                        threshold = 32_745;
+                        break;
                     case "Plan5":
                         threshold = 25_000;
-                        break; 
+                        break;
                     case "PostGrad":
                         threshold = 21_000;
-                        break; 
+                        break;
                 }
 
-                let percentage = 9; 
+                let percentage = 9;
                 if (this.data.studentLoanType == "PostGrad") {
-                    percentage = 6; 
+                    percentage = 6;
                 }
 
-                let interest = 8; 
+                let interest = 3.2;
                 switch (this.data.studentLoanType) {
-                    case "Plan1":
-                    case "Plan4":
-                        interest = 6.25; 
+                    case "PostGrad":
+                        interest = 6.2;
+                        break;
+                    case "Plan2":
+                        let income = this.data.baseSalary + this.data.bonuses;
+                        if (income > plan2Lower) {
+                            if (income > plan2Higher) {
+                                interest = 6.2
+                            } else {
+                                interest += 3 * ((income - plan2Lower) / (plan2Higher - plan2Lower))
+                            }
+                        }
+                        break;
                 }
 
                 pots.push(
                     {
-                        name: "Student Loan", 
-                        isTax: true, 
+                        name: "Student Loan",
+                        isTax: true,
                         personalContribution: {
                             brackets: [
                                 {
-                                    threshold: threshold, 
-                                    percentage: percentage, 
+                                    threshold: threshold,
+                                    percentage: percentage,
                                 }
                             ]
-                        }, 
+                        },
                         externalContribution: {
-                            value: 0, 
-                            interval: "Monthly",                 
-                            brackets: Array(), 
-                        }, 
-                        value: this.data.studentLoanValue, 
-                        interest: interest, 
-                        type: "Debt", 
-                        readonly: true, 
+                            value: 0,
+                            interval: "Monthly",
+                            brackets: Array(),
+                        },
+                        value: this.data.studentLoanValue,
+                        interest: interest,
+                        type: "Debt",
+                        readonly: true,
                     }
                 )
             }
 
-            return pots; 
-        }, 
+            return pots;
+        },
         getAllPots() {
             return [...this.fixedPots(), ...this.data.pots];;
-        },         
+        },
         project() {
-            let rows = []; 
-            let salary = this.totalSalary(); 
-            let baseSalary = this.data.baseSalary; 
+            let rows = [];
+            let salary = this.totalSalary();
+            let baseSalary = this.data.baseSalary;
             let total = {
-                salary: 0, 
-                takeHome: 0, 
-                disposable: 0, 
+                salary: 0,
+                takeHome: 0,
+                disposable: 0,
             }
-            let pots = deepCopy(this.getAllPots()); 
+            let pots = deepCopy(this.getAllPots());
 
             for (let year = 0; year <= this.data.years; year++) {
-                let takeHome = salary; 
-                let disposable = salary; 
+                let takeHome = salary;
+                let disposable = salary;
 
                 // create table pots 
                 let potData = pots.map(pot => {
-                    let contribution = this.getContribution(salary, baseSalary, pot, false); 
-                    
-                    disposable -= contribution; 
+                    let contribution = this.getContribution(salary, baseSalary, pot, false);
+
+                    disposable -= contribution;
                     if (pot.isTax) {
-                        takeHome -= contribution; 
+                        takeHome -= contribution;
                     }
-                    
+
                     let newPot = {
-                        name: pot.name, 
-                        type: pot.type, 
-                        contribution: contribution, 
-                        value: pot.value, 
-                        hide: pot.hide, 
-                        change: 0, 
+                        name: pot.name,
+                        type: pot.type,
+                        contribution: contribution,
+                        value: pot.value,
+                        hide: pot.hide,
+                        change: 0,
                     }
                     if (this.compareMode && newPot.type != 'Cost') {
                         newPot.change = newPot.value - this.originalProjection[year].pots.find(p => p.name == newPot.name).value;
@@ -303,21 +315,21 @@ function getData() {
                     return newPot
                 });
 
-                total.salary += salary; 
+                total.salary += salary;
                 total.disposable += disposable;
                 total.takeHome += takeHome;
                 let newRow = {
-                    year: this.data.age > 0 ? this.data.age + year : year, 
-                    salary: salary, 
-                    pots: potData, 
-                    takeHome: takeHome, 
-                    disposable: disposable, 
+                    year: this.data.age > 0 ? this.data.age + year : year,
+                    salary: salary,
+                    pots: potData,
+                    takeHome: takeHome,
+                    disposable: disposable,
                     change: {
-                        salary: 0, 
-                        takeHome: 0, 
-                        disposable: 0, 
+                        salary: 0,
+                        takeHome: 0,
+                        disposable: 0,
                     }
-                }; 
+                };
 
                 if (this.compareMode) {
                     ['salary', 'takeHome', 'disposable'].forEach(key => {
@@ -325,38 +337,38 @@ function getData() {
                     })
                 }
                 rows.push(newRow)
-            
-                
+
+
                 // calculate the next values 
-                pots.forEach(pot => {    
+                pots.forEach(pot => {
                     //compute interest 
                     switch (pot.type) {
-                    case 'Debt':
-                    case 'Asset':
-                        pot.value  += pot.value * (pot.interest / 100);
-                        break;  
-                    }   
-                    
+                        case 'Debt':
+                        case 'Asset':
+                            pot.value += pot.value * (pot.interest / 100);
+                            break;
+                    }
+
                     // compute personal contributions
-                    let personalContribution = this.getContribution(salary, baseSalary, pot, false); 
+                    let personalContribution = this.getContribution(salary, baseSalary, pot, false);
                     switch (pot.type) {
-                    case 'Debt':
-                        pot.value -= personalContribution; 
-                        break; 
-                    case 'Asset':
-                        pot.value += personalContribution; 
-                        break; 
+                        case 'Debt':
+                            pot.value -= personalContribution;
+                            break;
+                        case 'Asset':
+                            pot.value += personalContribution;
+                            break;
                     }
 
                     // compute external contributions
-                    let externalContribution = this.getContribution(salary, baseSalary, pot, true); 
+                    let externalContribution = this.getContribution(salary, baseSalary, pot, true);
                     switch (pot.type) {
-                    case 'Debt':
-                        pot.value -= externalContribution; 
-                        break; 
-                    case 'Asset':
-                        pot.value += externalContribution; 
-                        break; 
+                        case 'Debt':
+                            pot.value -= externalContribution;
+                            break;
+                        case 'Asset':
+                            pot.value += externalContribution;
+                            break;
                     }
                 })
                 salary += salary * (this.data.salaryPercent / 100);
@@ -364,72 +376,72 @@ function getData() {
             }
 
             let totalRow = {
-                year: "Total", 
-                salary: total.salary, 
-                takeHome: total.takeHome, 
-                disposable: total.disposable, 
+                year: "Total",
+                salary: total.salary,
+                takeHome: total.takeHome,
+                disposable: total.disposable,
                 change: {
-                    salary: 0, 
-                    takeHome: 0, 
-                    disposable: 0, 
+                    salary: 0,
+                    takeHome: 0,
+                    disposable: 0,
                 }
             }
             if (this.compareMode) {
                 ['salary', 'takeHome', 'disposable'].forEach(key => {
-                    totalRow.change[key] = totalRow[key] - this.originalProjection[this.data.years+1][key];
+                    totalRow.change[key] = totalRow[key] - this.originalProjection[this.data.years + 1][key];
                 })
             }
 
-            rows.push(totalRow); 
+            rows.push(totalRow);
 
-            this.saveData(); 
+            this.saveData();
 
-            return rows; 
-        }, 
+            return rows;
+        },
         personalAllowance(salary) {
             // TODO: Add blind people option 
             if (salary < 100_000) {
-                return 12_570; 
+                return 12_570;
             }
             if (salary > 125_140) {
-                return 0; 
+                return 0;
             }
 
-            return 12_570 - ((salary-100_000)/2)
-        }, 
+            return 12_570 - ((salary - 100_000) / 2)
+        },
         printMoney(text) {
-            let format = { 
-                style: 'currency', 
-                currency: 'GBP', 
-                minimumFractionDigits: 0, 
+            let format = {
+                style: 'currency',
+                currency: 'GBP',
+                minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             }
             return text.toLocaleString('en-GB', format)
-        }, 
+        },
         printChange(num) {
-            let multiple = ''; 
-            let amount = ''; 
-            const absNum = Math.abs(num); 
+            let multiple = '';
+            let amount = '';
+            const absNum = Math.abs(num);
             if (absNum >= 1_000_000) {
                 multiple = 'm';
-                amount = this.printMoney(num/1_000_000); 
-            }  else if (absNum >= 1_000) {
+                amount = this.printMoney(num / 1_000_000);
+            } else if (absNum >= 1_000) {
                 multiple = 'k';
-                amount = this.printMoney(num/1_000); 
+                amount = this.printMoney(num / 1_000);
             } else {
-                amount = this.printMoney(num); 
+                amount = this.printMoney(num);
             }
 
-            return (num > 0 ? '+' : '') +  amount + multiple; 
-        }, 
+            return (num > 0 ? '+' : '') + amount + multiple;
+        },
         getContribution(totalSalary, baseSalary, pot, external) {
-            let contribution = pot.personalContribution; 
+            let contribution = pot.personalContribution;
             if (external) {
-                contribution = pot.externalContribution; 
+                contribution = pot.externalContribution;
             }
 
             if (pot.isTax) {
-                let salary = totalSalary; 
+                let salary = totalSalary;
                 if (contribution.fromBase) {
                     salary = baseSalary;
                 }
@@ -439,41 +451,41 @@ function getData() {
                 if (pot.postPension) {
                     salary -= salary * (this.data.pensionPercent / 100)
                 }
-                
-                let total = 0; 
+
+                let total = 0;
 
                 contribution.brackets.forEach(bracket => {
-                    let threshold = bracket.threshold; 
+                    let threshold = bracket.threshold;
                     if (bracket.addPA) {
-                        threshold += this.personalAllowance(salary); 
+                        threshold += this.personalAllowance(salary);
                     }
 
-                    total += Math.max(salary - threshold, 0) * (bracket.percentage /100);
-                    salary = Math.min(threshold, salary); 
+                    total += Math.max(salary - threshold, 0) * (bracket.percentage / 100);
+                    salary = Math.min(threshold, salary);
                 })
 
                 switch (pot.type) {
-                case 'Debt':
-                    return Math.min(total, pot.value);
-                default:
-                    return total; 
+                    case 'Debt':
+                        return Math.min(total, pot.value);
+                    default:
+                        return total;
                 }
-            } 
+            }
 
-            let multiplier = 1; 
+            let multiplier = 1;
             switch (contribution.interval) {
                 case "Monthly":
                     multiplier = 12;
-                    break; 
+                    break;
             }
 
             switch (pot.type) {
-            case 'Debt':
-                return Math.min(contribution.value * multiplier, pot.value); 
-            default:
-                return contribution.value * multiplier; 
-            } 
-        }, 
+                case 'Debt':
+                    return Math.min(contribution.value * multiplier, pot.value);
+                default:
+                    return contribution.value * multiplier;
+            }
+        },
     }
 }
 
