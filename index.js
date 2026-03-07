@@ -37,7 +37,7 @@ function getData() {
                 compareMode: false,
                 baseSalary: 30000,
                 bonuses: 0,
-                salaryPercent: 5,
+                salaryPercent: 3,
                 pensionPercent: 0,
                 pensionValue: 0,
                 pensionEmployer: 0,
@@ -46,7 +46,8 @@ function getData() {
                 age: 0,
                 studentLoanType: "None",
                 studentLoanValue: 0,
-                pots: Array(),
+                customPots: Array(),
+                customActions: Array(),
             }
             this.compareMode = false;
         },
@@ -63,7 +64,7 @@ function getData() {
             return this.data.baseSalary + this.data.bonuses;
         },
         addCustomPot() {
-            this.data.pots.push({
+            this.data.customPots.push({
                 name: "Savings",
                 value: 1000,
                 interest: 4,
@@ -85,11 +86,33 @@ function getData() {
                 hide: false,
             });
 
-            const newItem = $('.accordion-item').last();
+            const newItem = $('.accordion-pot-item').last();
             new Foundation.Accordion(newItem);
         },
         deletePot(pot) {
-            this.data.pots.splice(this.data.pots.indexOf(pot), 1);
+            this.data.customPots.splice(this.data.customPots.indexOf(pot), 1);
+        },
+        addCustomAction() {
+            let firstFromPot = this.getAllPots().filter(p => p.type == 'Asset');
+            let firstToPot = this.getAllPots().filter(p => p.type != 'Cost');
+            if (firstFromPot.length == 0 || firstToPot.length == 0) {
+                return;
+            }
+
+            this.data.customActions.push({
+                name: "Example",
+                year: 1,
+                amount: 100,
+                fromPot: firstFromPot[0].name,
+                toPot: firstToPot[0].name,
+                readonly: false,
+            });
+
+            const newItem = $('.accordion-action-item').last();
+            new Foundation.Accordion(newItem);
+        },
+        deleteAction(action) {
+            this.data.customActions.splice(this.data.customActions.indexOf(action), 1);
         },
         deleteInterval(brackets, index) {
             brackets.splice(index, 1);
@@ -99,6 +122,81 @@ function getData() {
                 threshold: 10000,
                 percentage: 20,
             });
+        },
+        getActionFromPotList() {
+            let pots = this.getAllPots();
+            pots = pots.filter(p => p.type == 'Asset');
+            pots.push({
+                name: "External Source",
+                type: "External",
+                readonly: false,
+                hide: false,
+            });
+
+            return pots;
+        },
+        getActionToPotList() {
+            let pots = this.getAllPots();
+            pots = pots.filter(p => p.type != 'Cost');
+            pots.push({
+                name: "Spend",
+                type: "Cost",
+                readonly: false,
+                hide: false,
+            });
+
+            return pots;
+        },
+        fixedActions() {
+            let actions = [];
+
+            if (this.data.studentLoanType != "None" && this.data.studentLoanGraduation) {
+                let graduationYear = this.data.studentLoanGraduation;
+                let currentYear = new Date().getFullYear();
+                let actionYear = 0;
+                switch (this.data.studentLoanType) {
+                    case "Plan1":
+                        // assume 3 year course 
+                        // assume 25 if we don't have age 
+                        if (this.data.age > 0 && (graduationYear - 3) < 2006) {
+                            // if they are over 65, then they don't have any student loans 
+                            actionYear = 65 - this.data.age;
+                        } else {
+                            actionYear = 25 - (currentYear - graduationYear);
+                        }
+                        break;
+                    case "Plan4":
+                        let yearsToExpiry = 30;
+                        if (this.data.age > 0 && (graduationYear - 3) < 2007) {
+                            if (65 - this.data.age < yearsToExpiry) {
+                                yearsToExpiry = 65 - this.data.age;
+                            }
+                        } else {
+                            actionYear = yearsToExpiry - (currentYear - graduationYear);
+                        }
+                        break;
+                    case "Plan2":
+                    case "PostGrad":
+                        actionYear = 30 - (currentYear - graduationYear);
+                        break;
+                    case "Plan5":
+                        actionYear = 40 - (currentYear - graduationYear);
+                        break;
+                }
+                actions.push({
+                    name: "Student Loan Expiry",
+                    year: actionYear,
+                    amount: 999999,
+                    fromPot: "External Source",
+                    toPot: "Student Loan",
+                    readonly: true,
+                })
+            }
+
+            return actions;
+        },
+        getAllActions() {
+            return [...this.fixedActions(), ...this.data.customActions];
         },
         fixedPots() {
             let pots = [];
@@ -274,7 +372,7 @@ function getData() {
             return pots;
         },
         getAllPots() {
-            return [...this.fixedPots(), ...this.data.pots];;
+            return [...this.fixedPots(), ...this.data.customPots];;
         },
         project() {
             let rows = [];
@@ -286,10 +384,62 @@ function getData() {
                 disposable: 0,
             }
             let pots = deepCopy(this.getAllPots());
+            let actions = deepCopy(this.getAllActions());
 
             for (let year = 0; year <= this.data.years; year++) {
                 let takeHome = salary;
                 let disposable = salary;
+
+                actions.forEach(action => {
+                    if (action.year != year) {
+                        return;
+                    }
+
+                    let fromPot;
+                    if (action.fromPot == 'External Source') {
+                        fromPot = {
+                            name: "External Source",
+                            type: "External",
+                            readonly: false,
+                            hide: false,
+                            value: Number.MAX_SAFE_INTEGER,
+                        }
+                    } else {
+                        fromPot = pots.find(p => p.name == action.fromPot);
+                    }
+                    if (!fromPot || fromPot == null) {
+                        console.log("cound't find fromPot");
+                        return;
+                    }
+
+                    let amount = action.amount;
+                    if (fromPot.value < amount) {
+                        amount = fromPot.value
+                    }
+
+                    if (action.toPot == 'Spend') {
+                        fromPot.value -= amount;
+                        return;
+                    }
+
+                    let toPot = pots.find(p => p.name == action.toPot);
+                    if (!toPot || toPot == null) {
+                        console.log("cound't find toPot");
+                        return;
+                    }
+
+                    if (toPot.type == 'Debt') {
+                        toPot.value -= amount;
+                        if (toPot.value < amount) {
+                            amount = toPot.value;
+                            toPot.value = 0;
+                        }
+                    } else {
+                        toPot.value += amount;
+                    }
+
+                    fromPot.value -= amount;
+                });
 
                 // create table pots 
                 let potData = pots.map(pot => {
@@ -508,10 +658,12 @@ function deepCopy(obj) {
 }
 
 // Use a Mutation Observer to watch for changes in the accordion list
-const accordionList = document.querySelector('.accordion');
-const observer = new MutationObserver(() => {
-    Foundation.reInit($('.accordion'));
-});
+const accordionLists = document.querySelectorAll('.accordion');
 
-// Configure the observer to watch for child list mutations (like added nodes)
-observer.observe(accordionList, { childList: true });
+accordionLists.forEach((accordionList) => {
+    const observer = new MutationObserver(() => {
+        Foundation.reInit($(accordionList));
+    });
+
+    observer.observe(accordionList, { childList: true });
+});
