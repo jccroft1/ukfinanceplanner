@@ -41,6 +41,7 @@ function getData() {
                 pensionPercent: 0,
                 pensionValue: 0,
                 pensionEmployer: 0,
+                pensionSacrifice: false,
                 pensionFromBase: false,
                 years: 10,
                 age: 0,
@@ -50,6 +51,19 @@ function getData() {
                 customActions: Array(),
             }
             this.compareMode = false;
+        },
+        byName(a, b) {
+            const nameA = a.name.toUpperCase(); // ignore upper and lowercase
+            const nameB = b.name.toUpperCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+
+            // names must be equal
+            return 0;
         },
         enterCompare() {
             this.originalData = deepCopy(this.data);
@@ -73,6 +87,7 @@ function getData() {
                     value: 100,
                     interval: "Monthly",
                     brackets: Array(),
+                    sacrifice: false,
                     fromBase: false,
                 },
                 externalContribution: {
@@ -222,6 +237,7 @@ function getData() {
                                     percentage: this.data.pensionPercent * (1 - taxRelief),
                                 }
                             ],
+                            sacrifice: this.data.pensionSacrifice,
                             fromBase: this.data.pensionFromBase,
                         },
                         externalContribution: {
@@ -263,7 +279,8 @@ function getData() {
                                 threshold: 125140,
                                 percentage: 45,
                             }
-                        ]
+                        ],
+                        sacrifice: false,
                     },
                     externalContribution: {
                         value: 0,
@@ -278,6 +295,7 @@ function getData() {
                     name: "National Insurance",
                     isTax: true,
                     personalContribution: {
+                        sacrifice: false,
                         brackets: [
                             {
                                 threshold: 12570,
@@ -349,6 +367,7 @@ function getData() {
                         name: "Student Loan",
                         isTax: true,
                         personalContribution: {
+                            sacrifice: false,
                             brackets: [
                                 {
                                     threshold: threshold,
@@ -441,9 +460,28 @@ function getData() {
                     fromPot.value -= amount;
                 });
 
+                let sacrificedTotalSalary = salary;
+                let sacrificedBaseSalary = baseSalary;
+
                 // create table pots 
-                let potData = pots.map(pot => {
-                    let contribution = this.getContribution(salary, baseSalary, pot, false);
+                let potRow = pots.sort((p1, p2) => {
+                    if (p1.personalContribution.sacrifice == p2.personalContribution.sacrifice) {
+                        return 0;
+                    }
+                    if (p1.personalContribution.sacrifice) {
+                        return -1;
+                    }
+                    return 1;
+                }).map(pot => {
+                    let contribution;
+                    if (pot.personalContribution.sacrifice) {
+                        contribution = this.getContribution(salary, baseSalary, pot, false);
+
+                        sacrificedTotalSalary -= contribution;
+                        sacrificedBaseSalary -= contribution;
+                    } else {
+                        contribution = this.getContribution(sacrificedTotalSalary, sacrificedBaseSalary, pot, false);
+                    }
 
                     disposable -= contribution;
                     if (pot.isTax) {
@@ -463,7 +501,7 @@ function getData() {
                     }
 
                     return newPot
-                });
+                }).sort(this.byName);
 
                 total.salary += salary;
                 total.disposable += disposable;
@@ -471,7 +509,7 @@ function getData() {
                 let newRow = {
                     year: this.data.age > 0 ? this.data.age + year : year,
                     salary: salary,
-                    pots: potData,
+                    pots: potRow,
                     takeHome: takeHome,
                     disposable: disposable,
                     change: {
@@ -488,7 +526,6 @@ function getData() {
                 }
                 rows.push(newRow)
 
-
                 // calculate the next values 
                 pots.forEach(pot => {
                     //compute interest 
@@ -499,8 +536,16 @@ function getData() {
                             break;
                     }
 
+                    let inputSalary = salary;
+                    let inputBaseSalary = baseSalary;
+                    if (!pot.personalContribution.sacrifice) {
+                        inputSalary = sacrificedTotalSalary;
+                        inputBaseSalary = sacrificedBaseSalary;
+                    }
+
                     // compute personal contributions
-                    let personalContribution = this.getContribution(salary, baseSalary, pot, false);
+                    // TODO: Reduce the getContribution duplication with above. 
+                    let personalContribution = this.getContribution(inputSalary, inputBaseSalary, pot, false);
                     switch (pot.type) {
                         case 'Debt':
                             pot.value -= personalContribution;
@@ -511,7 +556,7 @@ function getData() {
                     }
 
                     // compute external contributions
-                    let externalContribution = this.getContribution(salary, baseSalary, pot, true);
+                    let externalContribution = this.getContribution(inputSalary, inputBaseSalary, pot, true);
                     switch (pot.type) {
                         case 'Debt':
                             pot.value -= externalContribution;

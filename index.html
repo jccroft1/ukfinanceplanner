@@ -87,10 +87,14 @@
                             <input type="number" placeholder="Enter your how much your emplyer matches up to"
                                 name="pensionEmployer" x-model.number="data.pensionEmployer" required>
                         </label>
-                        <fieldset class="medium-12 large-4 cell" x-show="data.pensionPercent > 0 && data.bonuses > 0"
+                        <fieldset class="medium-6 large-4 cell" x-show="data.pensionPercent > 0" x-transition>
+                            <input id="pensionSacrificeCheckbox" type="checkbox" x-model="data.pensionSacrifice"><label
+                                for="pensionSacrificeCheckbox">Salary sacrifice?</label>
+                        </fieldset>
+                        <fieldset class="medium-6 large-4 cell" x-show="data.pensionPercent > 0 && data.bonuses > 0"
                             x-transition>
                             <input id="pensionBaseCheckbox" type="checkbox" x-model="data.pensionFromBase"><label
-                                for="pensionBaseCheckbox">From base salary?</label>
+                                for="pensionBaseCheckbox">% of base salary?</label>
                         </fieldset>
                     </section>
 
@@ -116,8 +120,6 @@
                             <input type="number" placeholder="2000" name="studentLoanGraduation"
                                 x-model.number="data.studentLoanGraduation" required>
                         </label>
-
-                        <!-- TODO: Graduation date to do expiry. Maybe an opportunity to do events (i.e. moving money at specific years/conditions) -->
                     </section>
 
                     <section class="grid-x grid-padding-x">
@@ -216,6 +218,17 @@
                                             Asset
                                         </label>
                                     </fieldset>
+
+                                    <fieldset class="medium-6 cell">
+                                        <div class="grid-x grid-padding-x">
+                                            <div class="medium-12 cell">
+                                                <input id="sacrificeCheckbox" type="checkbox"
+                                                    x-model="pot.personalContribution.sacrifice"
+                                                    :readonly="pot.readonly" :disabled="pot.readonly">
+                                                <label for="sacrifice">As salary sacrifice?</label>
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
 
                                 <div class="grid-x grid-padding-x">
@@ -230,6 +243,8 @@
                                             x-model.number="pot.interest" :readonly="pot.readonly" required>
                                     </label>
                                 </div>
+
+                                <!-- TODO: Allow enabling sacrifice on custom pots. -->
 
                                 <hr>
                                 </hr>
@@ -406,7 +421,7 @@
                                 <sup><span data-tooltip tabindex="1" title="This is your salary after all outgoings."
                                         data-trigger-class="">?</span></sup>
                             </th>
-                            <template x-for="(pot, index) in getAllPots()" :key="index">
+                            <template x-for="(pot, index) in getAllPots().sort(byName)" :key="index">
                                 <th x-show="!pot.hide" x-text="pot.type === 'Cost' ? '(' + pot.name + ')' : pot.name">
                                 </th>
                             </template>
