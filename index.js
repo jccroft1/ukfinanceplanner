@@ -225,6 +225,9 @@ function getData() {
                 } else if (this.totalSalary() > 12570) {
                     taxRelief = 0.2;
                 }
+                if (this.data.pensionSacrifice) {
+                    taxRelief = 0;
+                }
 
                 pots.push(
                     {
