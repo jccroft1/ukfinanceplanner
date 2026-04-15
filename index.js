@@ -237,6 +237,8 @@ function getData() {
                             brackets: [
                                 {
                                     threshold: 0,
+                                    // we remove the tax relief from personal contributions 
+                                    // to instead add it to their pension externally 
                                     percentage: this.data.pensionPercent * (1 - taxRelief),
                                 }
                             ],
@@ -247,7 +249,7 @@ function getData() {
                             brackets: [
                                 {
                                     threshold: 0,
-                                    percentage: this.data.pensionEmployer * (1 + taxRelief),
+                                    percentage: this.data.pensionEmployer + (this.data.pensionPercent * taxRelief),
                                 }
                             ],
                             fromBase: this.data.pensionFromBase,
